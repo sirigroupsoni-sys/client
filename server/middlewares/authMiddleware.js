@@ -1,31 +1,46 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const db = require('../config/db');
 
-const auth = (roles = []) => {
-  if (typeof roles === 'string') {
-    roles = [roles];
-  }
-
-  return (req, res, next) => {
-    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+exports.protect = async (req, res, next) => {
+  try {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
+    }
 
     if (!token) {
-      return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
+      return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
     }
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      if (roles.length && !roles.includes(decoded.role)) {
-        return res.status(403).json({ success: false, message: 'Access denied. Unauthorized role.' });
-      }
+    // Check if user still exists
+    const [users] = await db.execute('SELECT id, name, email, role FROM users WHERE id = ?', [decoded.id]);
+    const user = users[0];
 
-      next();
-    } catch (error) {
-      res.status(400).json({ success: false, message: 'Invalid token.' });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'The user belonging to this token no longer exists' });
     }
-  };
+
+    // Grant access
+    req.user = user;
+    next();
+  } catch (err) {
+    res.status(401).json({ success: false, message: 'Not authorized' });
+  }
 };
 
-module.exports = auth;
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to perform this action'
+      });
+    }
+    next();
+  };
+};

@@ -41,11 +41,9 @@ const Header = ({ selectedCity, setSelectedCity }) => {
         { label: 'SnackBox', highlight: 'Box', href: '/selectedPackage?service=SnackBox' },
       ]
     },
-    { name: 'Dishes', hasDropdown: true },
-    { name: 'Corporate', hasDropdown: true },
-    { name: 'Blog', hasDropdown: false },
-    { name: 'My Profile', hasDropdown: false },
-    { name: 'Contact Us', hasDropdown: false },
+    { name: 'About Us', hasDropdown: false, href: '/about' },
+    { name: 'Contact Us', hasDropdown: false, href: 'https://wa.me/919845554820', isExternal: true },
+    { name: 'My Profile', hasDropdown: false, href: '/profile' },
   ];
 
   return (
@@ -121,14 +119,33 @@ const Header = ({ selectedCity, setSelectedCity }) => {
         <nav className="hidden lg:flex items-center gap-6 xl:gap-10">
           {navLinks.map((link) => (
             <div key={link.name} className="relative group">
-              <a
-                href="#"
-                className="relative text-[14px] xl:text-[15px] font-heading font-bold text-gray-700 transition-all duration-300 py-4
-                  hover:text-mscaterers-red flex items-center gap-1.5 group-hover:text-mscaterers-red"
-              >
-                <span className="group-hover:-translate-y-0.5 transition-transform duration-300">{link.name}</span>
-                {link.hasDropdown && <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300 opacity-60" />}
-              </a>
+              {link.hasDropdown ? (
+                <button
+                  className="relative text-[14px] xl:text-[15px] font-heading font-bold text-mscaterers-red transition-all duration-300 py-4
+                    flex items-center gap-1.5 group-hover:scale-105"
+                >
+                  <span className="group-hover:-translate-y-0.5 transition-transform duration-300">{link.name}</span>
+                  <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300 opacity-60" />
+                </button>
+              ) : link.isExternal ? (
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative text-[14px] xl:text-[15px] font-heading font-bold text-mscaterers-red transition-all duration-300 py-4
+                    flex items-center gap-1.5 hover:scale-105"
+                >
+                  <span className="hover:-translate-y-0.5 transition-transform duration-300">{link.name}</span>
+                </a>
+              ) : (
+                <Link
+                  to={link.href || '#'}
+                  className="relative text-[14px] xl:text-[15px] font-heading font-bold text-mscaterers-red transition-all duration-300 py-4
+                    flex items-center gap-1.5 hover:scale-105"
+                >
+                  <span className="hover:-translate-y-0.5 transition-transform duration-300">{link.name}</span>
+                </Link>
+              )}
 
               {/* Dropdown Menu */}
               {link.hasDropdown && link.dropdownItems && (
@@ -209,16 +226,30 @@ const Header = ({ selectedCity, setSelectedCity }) => {
           <div className="flex flex-col gap-6">
             {navLinks.map((link) => (
               <div key={link.name} className="flex flex-col border-b border-gray-100 pb-5">
-                <a
-                  href="#"
-                  className="text-2xl font-heading font-black text-gray-800 flex items-center justify-between hover:text-mscaterers-red transition-colors"
-                  onClick={(e) => {
-                    if (!link.hasDropdown) setIsMobileMenuOpen(false);
-                  }}
-                >
-                  {link.name}
-                  {link.hasDropdown && <ChevronDown size={24} />}
-                </a>
+                {link.hasDropdown ? (
+                  <div className="text-2xl font-heading font-black text-mscaterers-red flex items-center justify-between">
+                    {link.name}
+                    <ChevronDown size={24} />
+                  </div>
+                ) : link.isExternal ? (
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-2xl font-heading font-black text-mscaterers-red flex items-center justify-between"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    to={link.href || '#'}
+                    className="text-2xl font-heading font-black text-mscaterers-red flex items-center justify-between"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                )}
 
                 {/* Mobile Dropdown Items */}
                 {link.hasDropdown && link.dropdownItems && (

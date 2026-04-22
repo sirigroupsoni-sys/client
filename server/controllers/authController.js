@@ -1,14 +1,15 @@
-const User = require('../models/User');
+const db = require('../config/db');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '7d'
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   });
 };
 
 const sendToken = (user, statusCode, res) => {
-  const token = signToken(user._id);
+  const token = signToken(user.id);
   
   res.cookie('jwt', token, {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -16,7 +17,7 @@ const sendToken = (user, statusCode, res) => {
     secure: process.env.NODE_ENV === 'production'
   });
 
-  user.password = undefined;
+  delete user.password;
 
   res.status(statusCode).json({
     success: true,
@@ -25,16 +26,33 @@ const sendToken = (user, statusCode, res) => {
   });
 };
 
-exports.register = async (req, res, next) => {
+exports.register = async (req, res) => {
   try {
-    const newUser = await User.create({
-      name: req.body.name,
-      email: req.body.email,
-      password: req.body.password,
-      phone: req.body.phone,
-      address: req.body.address,
-      role: req.body.role || 'Customer'
-    });
+    const { name, email, password, phone, address, role } = req.body;
+
+    // Check if user exists
+    const [existingUser] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ success: false, message: 'User already exists' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create user
+    const [result] = await db.execute(
+      'INSERT INTO users (name, email, password, phone, address, role) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, hashedPassword, phone, address, role || 'customer']
+    );
+
+    const newUser = {
+      id: result.insertId,
+      name,
+      email,
+      phone,
+      address,
+      role: role || 'customer'
+    };
 
     sendToken(newUser, 201, res);
   } catch (err) {
@@ -42,7 +60,7 @@ exports.register = async (req, res, next) => {
   }
 };
 
-exports.login = async (req, res, next) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -50,9 +68,10 @@ exports.login = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const user = users[0];
 
-    if (!user || !(await user.comparePassword(password, user.password))) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ success: false, message: 'Incorrect email or password' });
     }
 
@@ -72,7 +91,13 @@ exports.logout = (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const [users] = await db.execute('SELECT id, name, email, phone, address, role, created_at FROM users WHERE id = ?', [req.user.id]);
+    const user = users[0];
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
     res.status(200).json({ success: true, user });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });

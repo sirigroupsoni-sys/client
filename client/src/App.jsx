@@ -11,6 +11,7 @@ import PackagePage from './pages/PackagePage';
 import CheckPricePage from './pages/CheckPricePage';
 import SelectedPackagePage from './pages/SelectedPackagePage';
 import MSCATERERSBoxPage from './pages/MSCATERERSBoxPage';
+import ProfilePage from './pages/ProfilePage';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
               <Route path="/checkprice" element={<CheckPricePage />} />
               <Route path="/selectedPackage" element={<SelectedPackagePage />} />
               <Route path="/mscaterersbox" element={<MSCATERERSBoxPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Routes>
 
             <Footer />

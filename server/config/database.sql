@@ -36,6 +36,8 @@ CREATE TABLE dishes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     menu_id INT,
     name VARCHAR(255) NOT NULL,
+    description TEXT,
+    image_url VARCHAR(255),
     type ENUM('Veg', 'Non-Veg', 'Jain') DEFAULT 'Veg',
     course ENUM('Starter', 'Main Course', 'Dessert', 'Beverage', 'Other') DEFAULT 'Main Course',
     price_impact DECIMAL(10, 2) DEFAULT 0.00,

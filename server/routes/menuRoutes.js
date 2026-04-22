@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { getCategories, getMenusByCategory, getMenuDetails, getAddOns } = require('../controllers/menuController');
+const { 
+  getCategories, 
+  getMenusByCategory, 
+  getMenuDishes, 
+  getAddons, 
+  calculatePrice 
+} = require('../controllers/menuController');
 
 router.get('/categories', getCategories);
 router.get('/category/:categoryId', getMenusByCategory);
-router.get('/details/:menuId', getMenuDetails);
-router.get('/addons', getAddOns);
+router.get('/:menuId/dishes', getMenuDishes);
+router.get('/addons/all', getAddons);
+router.post('/calculate-price', calculatePrice);
 
 module.exports = router;

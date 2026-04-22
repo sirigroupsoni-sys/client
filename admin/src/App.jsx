@@ -2,8 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './layouts/Sidebar';
 import Dashboard from './pages/Dashboard';
+import Bookings from './pages/Bookings';
+import Menus from './pages/Menus';
+import Users from './pages/Users';
 
-// Shared Components / Layout
+// Shared Layout
 const AdminLayout = ({ children }) => (
   <div className="flex bg-[#F8FAFC] min-h-screen">
     <Sidebar />
@@ -14,9 +17,6 @@ const AdminLayout = ({ children }) => (
 );
 
 // Placeholder Pages
-const Bookings = () => <AdminLayout><h1 className="text-4xl font-black">Bookings</h1></AdminLayout>;
-const Menus = () => <AdminLayout><h1 className="text-4xl font-black">Menu Management</h1></AdminLayout>;
-const Users = () => <AdminLayout><h1 className="text-4xl font-black">User Management</h1></AdminLayout>;
 const Reports = () => <AdminLayout><h1 className="text-4xl font-black">Reports</h1></AdminLayout>;
 const CMS = () => <AdminLayout><h1 className="text-4xl font-black">CMS</h1></AdminLayout>;
 
@@ -28,14 +28,14 @@ function App() {
   }
 
   return (
-    <Router basename="/mscaterers/admin">
+    <Router>
       <Routes>
         <Route path="/" element={<AdminLayout><Dashboard /></AdminLayout>} />
-        <Route path="/bookings" element={<Bookings />} />
-        <Route path="/menus" element={<Menus />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/cms" element={<CMS />} />
+        <Route path="/bookings" element={<AdminLayout><Bookings /></AdminLayout>} />
+        <Route path="/menus" element={<AdminLayout><Menus /></AdminLayout>} />
+        <Route path="/users" element={<AdminLayout><Users /></AdminLayout>} />
+        <Route path="/reports" element={<AdminLayout><Reports /></AdminLayout>} />
+        <Route path="/cms" element={<AdminLayout><CMS /></AdminLayout>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
