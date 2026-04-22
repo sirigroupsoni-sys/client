@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Montserrat+Alternates:wght@600&display=swap');
+
+@theme {
+  --color-mscaterers-red: #BE2E3E;
+  --color-mscaterers-black: #222222;
+  --color-mscaterers-yellow: #FFF3CD;
+  --color-mscaterers-brown: #856404;
+  --color-mscaterers-grey: #F2F2F2;
+  --color-mscaterers-card-yellow: #FBB03B;
+  
+  --font-sans: "Poppins", "Inter", "sans-serif";
+  --font-heading: "Montserrat", "sans-serif";
+}
+
+@utility animate-marquee {
+  display: flex;
+  width: fit-content;
+  animation: marquee 30s linear infinite;
+}
+
+@utility pause-marquee {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeText {
+  0% {
+    opacity: 0;
+    letter-spacing: 2px;
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: 0;
+  }
+}
+
+@keyframes fadeZoom {
+  0% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+body {
+  @apply font-sans;
+}
+
+/* Custom Scrollbar Utility */
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+  }
+}
+
+/* Custom Scrollbar for Event Categories */
+.category-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+.category-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.category-scrollbar::-webkit-scrollbar-thumb {
+  background: #BE2E3E; /* MSCATERERS Red */
+  border-radius: 10px;
+}
+.category-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a32735;
+}
+
+@utility hide-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
