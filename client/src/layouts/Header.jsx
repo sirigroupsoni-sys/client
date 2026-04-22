@@ -36,9 +36,9 @@ const Header = ({ selectedCity, setSelectedCity }) => {
       dropdownItems: [
         { label: 'Menu & Prices', highlight: 'Prices', href: '/checkprice' },
         { label: 'MSCATERERSBox', highlight: 'Box', href: '/mscaterersbox' },
-        { label: 'MSCATERERSBuffet', highlight: 'Buffet', href: '/selectedPackage?service=MSCATERERSBuffet' },
-        { label: 'MealBox', highlight: 'Box', href: '/selectedPackage?service=MealBox' },
-        { label: 'SnackBox', highlight: 'Box', href: '/selectedPackage?service=SnackBox' },
+        { label: 'MSCATERERSBuffet', highlight: 'Buffet', href: '/mscaterersbuffet' },
+        { label: 'MealBox', highlight: 'Box', href: '/mealbox' },
+        { label: 'SnackBox', highlight: 'Box', href: '/snackbox' },
       ]
     },
     { name: 'About Us', hasDropdown: false, href: '/about' },

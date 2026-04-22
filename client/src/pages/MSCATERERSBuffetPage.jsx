@@ -25,9 +25,9 @@ import food_2 from '../assets/food_2.png';
 import food_3 from '../assets/food_3.png';
 import food_4 from '../assets/food_4.png';
 
-const MSCATERERSBoxPage = () => {
+const MSCATERERSBuffetPage = () => {
   const scrollRef = useRef(null);
-  const [selectedOption, setSelectedOption] = React.useState('BulkFood');
+  const [selectedOption, setSelectedOption] = React.useState('FoodService');
   const [isVeg, setIsVeg] = React.useState(true);
   const [priceRange, setPriceRange] = React.useState('300-450');
   const [menus, setMenus] = React.useState([]);
@@ -227,14 +227,14 @@ const MSCATERERSBoxPage = () => {
           <img
             src={food_5}
             className="w-full h-full object-cover"
-            alt="MSCATERERS Box Background"
+            alt="MSCATERERS Buffet Background"
           />
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]"></div>
         </div>
 
         <div className="relative z-10 text-center text-white px-4">
           <h1 className="text-3xl md:text-6xl font-black mb-4 tracking-tight font-heading uppercase">
-            <span className="text-[#1a202c] drop-shadow-[0_0_15px_rgba(255,255,255,1)]">MSCATERERS</span><span className="text-[#BE2E3E] drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">Box</span>
+            <span className="text-[#1a202c] drop-shadow-[0_0_15px_rgba(255,255,255,1)]">MSCATERERS</span><span className="text-[#BE2E3E] drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">Buffet</span>
           </h1>
           <p className="text-base md:text-lg mb-8 max-w-2xl mx-auto font-bold drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
             Gourmet catering delivered in sleek, premium boxes. Perfect for 10-100 guests.
@@ -571,7 +571,7 @@ const MSCATERERSBoxPage = () => {
                       <img src="https://siridemo.co.in/ms/final-1/assets/images/logo-icon.png" className="w-full h-full object-cover" alt="logo" />
                     </div>
                     <div className="text-white">
-                      <p className="text-sm font-medium leading-tight">MSCATERERS Box - Bulk Food Delivery</p>
+                      <p className="text-sm font-medium leading-tight">MSCATERERS Buffet - Full Service Catering</p>
                       <p className="text-[10px] opacity-70">MSCATERERS</p>
                     </div>
                   </div>
@@ -626,7 +626,7 @@ const MSCATERERSBoxPage = () => {
       {/* Why Choose Section */}
       <section className="py-12 px-4 bg-[#FDFBFB]">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-12">Why Choose <span className="text-[#B70C10]">MSCATERERS Box?</span></h2>
+          <h2 className="text-3xl font-bold mb-12">Why Choose <span className="text-[#B70C10]">MSCATERERS Buffet?</span></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: '🍛', title: 'Hygiene & Quality', desc: 'FSSAI certified kitchens and premium ingredients' },
@@ -843,4 +843,4 @@ const MSCATERERSBoxPage = () => {
   );
 };
 
-export default MSCATERERSBoxPage;
+export default MSCATERERSBuffetPage;

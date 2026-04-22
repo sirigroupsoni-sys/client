@@ -1,28 +1,33 @@
-const db = require('../config/db');
+const User = require('../models/User');
+const Menu = require('../models/Menu');
+const Category = require('../models/Category');
+const Booking = require('../models/Booking');
 
-// --- Dashboard Analytics ---
 exports.getAnalytics = async (req, res) => {
   try {
-    const [totalBookings] = await db.execute('SELECT COUNT(*) as count FROM bookings');
-    const [totalRevenue] = await db.execute('SELECT SUM(total_price) as total FROM bookings WHERE status != "Cancelled"');
-    const [pendingBookings] = await db.execute('SELECT COUNT(*) as count FROM bookings WHERE status = "Pending"');
-    const [userCount] = await db.execute('SELECT COUNT(*) as count FROM users WHERE role = "customer"');
+    const totalBookings = await Booking.countDocuments();
+    const confirmedBookings = await Booking.countDocuments({ status: 'Confirmed' });
+    const pendingBookings = await Booking.countDocuments({ status: 'Pending' });
+    const userCount = await User.countDocuments({ role: 'Customer' });
+    
+    // Calculate total revenue
+    const bookings = await Booking.find({ status: { $in: ['Confirmed', 'Completed'] } });
+    const totalRevenue = bookings.reduce((acc, curr) => acc + (curr.pricingBreakdown?.total || 0), 0);
 
-    // Recent Bookings
-    const [recentBookings] = await db.execute(
-      `SELECT b.*, u.name as customer_name 
-       FROM bookings b 
-       JOIN users u ON b.user_id = u.id 
-       ORDER BY b.created_at DESC LIMIT 5`
-    );
+    const recentBookings = await Booking.find()
+      .populate('user', 'name')
+      .populate('menu', 'name')
+      .sort({ createdAt: -1 })
+      .limit(5);
 
     res.status(200).json({
       success: true,
       stats: {
-        totalBookings: totalBookings[0].count,
-        totalRevenue: totalRevenue[0].total || 0,
-        pendingBookings: pendingBookings[0].count,
-        userCount: userCount[0].count
+        totalBookings,
+        confirmedBookings,
+        pendingBookings,
+        userCount,
+        totalRevenue
       },
       recentBookings
     });
@@ -31,10 +36,9 @@ exports.getAnalytics = async (req, res) => {
   }
 };
 
-// --- User Management ---
 exports.getAllUsers = async (req, res) => {
   try {
-    const [users] = await db.execute('SELECT id, name, email, role, phone, created_at FROM users');
+    const users = await User.find().sort({ createdAt: -1 });
     res.status(200).json({ success: true, users });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -43,24 +47,21 @@ exports.getAllUsers = async (req, res) => {
 
 exports.updateUserRole = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { role } = req.body;
-    await db.execute('UPDATE users SET role = ? WHERE id = ?', [role, id]);
-    res.status(200).json({ success: true, message: 'User role updated' });
+    const user = await User.findByIdAndUpdate(
+      req.params.id, 
+      { role: req.body.role },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({ success: true, user });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
 };
 
-// --- Menu Management ---
 exports.createMenu = async (req, res) => {
   try {
-    const { category_id, name, description, base_price_per_plate, min_guests } = req.body;
-    const [result] = await db.execute(
-      'INSERT INTO menus (category_id, name, description, base_price_per_plate, min_guests) VALUES (?, ?, ?, ?, ?)',
-      [category_id, name, description, base_price_per_plate, min_guests]
-    );
-    res.status(201).json({ success: true, menuId: result.insertId });
+    const menu = await Menu.create(req.body);
+    res.status(201).json({ success: true, menu });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -68,13 +69,11 @@ exports.createMenu = async (req, res) => {
 
 exports.updateMenu = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { category_id, name, description, base_price_per_plate, min_guests } = req.body;
-    await db.execute(
-      'UPDATE menus SET category_id = ?, name = ?, description = ?, base_price_per_plate = ?, min_guests = ? WHERE id = ?',
-      [category_id, name, description, base_price_per_plate, min_guests, id]
-    );
-    res.status(200).json({ success: true, message: 'Menu updated' });
+    const menu = await Menu.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    res.status(200).json({ success: true, menu });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -82,9 +81,20 @@ exports.updateMenu = async (req, res) => {
 
 exports.deleteMenu = async (req, res) => {
   try {
-    const { id } = req.params;
-    await db.execute('DELETE FROM menus WHERE id = ?', [id]);
+    await Menu.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'Menu deleted' });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.getAllBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .populate('user', 'name email phone')
+      .populate('menu', 'name')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, bookings });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -92,12 +102,13 @@ exports.deleteMenu = async (req, res) => {
 
 exports.addDish = async (req, res) => {
   try {
-    const { menu_id, name, description, image_url, type, course, price_impact } = req.body;
-    await db.execute(
-      'INSERT INTO dishes (menu_id, name, description, image_url, type, course, price_impact) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [menu_id, name, description, image_url, type, course, price_impact]
+    const { menuId, name, type, price } = req.body;
+    const menu = await Menu.findByIdAndUpdate(
+      menuId,
+      { $push: { dishes: { name, type, price } } },
+      { new: true }
     );
-    res.status(201).json({ success: true, message: 'Dish added' });
+    res.status(200).json({ success: true, menu });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -105,13 +116,19 @@ exports.addDish = async (req, res) => {
 
 exports.updateDish = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, description, image_url, type, course, price_impact } = req.body;
-    await db.execute(
-      'UPDATE dishes SET name = ?, description = ?, image_url = ?, type = ?, course = ?, price_impact = ? WHERE id = ?',
-      [name, description, image_url, type, course, price_impact, id]
+    const { menuId, dishId, name, type, price } = req.body;
+    const menu = await Menu.findOneAndUpdate(
+      { _id: menuId, "dishes._id": dishId },
+      { 
+        $set: { 
+          "dishes.$.name": name, 
+          "dishes.$.type": type, 
+          "dishes.$.price": price 
+        } 
+      },
+      { new: true }
     );
-    res.status(200).json({ success: true, message: 'Dish updated' });
+    res.status(200).json({ success: true, menu });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -119,25 +136,13 @@ exports.updateDish = async (req, res) => {
 
 exports.deleteDish = async (req, res) => {
   try {
-    const { id } = req.params;
-    await db.execute('DELETE FROM dishes WHERE id = ?', [id]);
-    res.status(200).json({ success: true, message: 'Dish deleted' });
-  } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-};
-
-// --- Booking Management ---
-exports.getAllBookings = async (req, res) => {
-  try {
-    const [bookings] = await db.execute(
-      `SELECT b.*, u.name as customer_name, m.name as menu_name 
-       FROM bookings b 
-       JOIN users u ON b.user_id = u.id 
-       LEFT JOIN menus m ON b.menu_id = m.id 
-       ORDER BY b.created_at DESC`
+    const { menuId, dishId } = req.params;
+    const menu = await Menu.findByIdAndUpdate(
+      menuId,
+      { $pull: { dishes: { _id: dishId } } },
+      { new: true }
     );
-    res.status(200).json({ success: true, bookings });
+    res.status(200).json({ success: true, menu });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -145,10 +150,12 @@ exports.getAllBookings = async (req, res) => {
 
 exports.assignManager = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { managerId } = req.body;
-    await db.execute('UPDATE bookings SET manager_id = ? WHERE id = ?', [managerId, id]);
-    res.status(200).json({ success: true, message: 'Manager assigned' });
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { manager: req.body.managerId },
+      { new: true }
+    );
+    res.status(200).json({ success: true, booking });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

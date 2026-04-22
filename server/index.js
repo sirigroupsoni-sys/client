@@ -2,14 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
-const db = require('./config/db');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
 
 // Middlewares
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true
 }));
 app.use(express.json());
@@ -17,19 +17,22 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
-// Database Connection Test
-db.getConnection()
-  .then(connection => {
-    console.log('MySQL Database Connected Successfully');
-    connection.release();
-  })
-  .catch(err => {
-    console.error('MySQL Connection Error:', err.message);
-  });
+// MongoDB Connection with Auto-Retry
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ms_caterers');
+    console.log('MongoDB Connected Successfully');
+  } catch (err) {
+    console.error('MongoDB Connection Error:', err.message);
+    console.log('Retrying in 5 seconds...');
+    setTimeout(connectDB, 5000);
+  }
+};
+connectDB();
 
 // Basic Route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to MS Caterers API' });
+  res.json({ message: 'Welcome to MS Caterers MongoDB API' });
 });
 
 // Import Routes
