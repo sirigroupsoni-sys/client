@@ -29,7 +29,7 @@ const Footer = () => {
               <li><Link to="/checkprice" className="text-[#333] hover:text-[#a41010] text-[14px] font-semibold transition-colors">Menu & Prices</Link></li>
               <li><Link to="/mscaterersbox" className="text-[#333] hover:text-[#a41010] text-[14px] font-semibold transition-colors">MSCATERERSBox</Link></li>
               <li><Link to="/selectedPackage?service=MSCATERERSBuffet" className="text-[#333] hover:text-[#a41010] text-[14px] font-semibold transition-colors">MSCATERERSBuffet</Link></li>
-              <li><a href="/mscaterers/admin/" className="text-[#333] hover:text-[#a41010] text-[14px] font-semibold transition-colors">Admin Dashboard</a></li>
+              <li><Link to="/admin" className="text-[#333] hover:text-[#a41010] text-[14px] font-semibold transition-colors">Admin Dashboard</Link></li>
             </ul>
           </div>
 

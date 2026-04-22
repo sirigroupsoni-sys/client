@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './layouts/Header';
 import AlertBar from './layouts/AlertBar';
 import LocationBar from './layouts/LocationBar';
@@ -17,25 +17,26 @@ import MealBoxPage from './pages/MealBoxPage';
 import ProfilePage from './pages/ProfilePage';
 import { AuthProvider } from './context/AuthContext';
 
-// Simple Redirect component to find the Admin Panel
-const AdminRedirect = () => {
-  useEffect(() => {
-    // Try common dev ports for the admin panel
-    const adminPorts = [3001, 5174, 5173];
-    const currentPort = window.location.port;
-    
-    // If we are on port 3000, try to find the admin on 3001
-    if (currentPort === "3000") {
-      window.location.href = `http://localhost:3001`;
-    } else {
-      window.location.href = `http://localhost:5174`; // Fallback to common Vite port
-    }
-  }, []);
-  
+// Admin Components
+import AdminSidebar from './layouts/admin/Sidebar';
+import AdminHeader from './layouts/admin/Header';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminBookings from './pages/admin/Bookings';
+import AdminMenus from './pages/admin/Menus';
+import AdminUsers from './pages/admin/Users';
+import AdminLogin from './pages/admin/Login';
+
+// Shared Admin Layout Component
+const AdminLayout = ({ children, isCollapsed, setIsCollapsed }) => {
   return (
-    <div className="h-screen flex items-center justify-center bg-white flex-col gap-4">
-      <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-      <p className="text-slate-500 font-bold animate-pulse">Establishing Secure Connection to Admin Vault...</p>
+    <div className="flex bg-[#F8FAFC] min-h-screen font-['Inter']">
+      <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <div className={`flex-1 flex flex-col transition-all duration-500 ease-in-out ${isCollapsed ? 'ml-20' : 'ml-72'}`}>
+        <AdminHeader />
+        <main className="p-10 max-w-[1600px] mx-auto w-full">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };
@@ -43,9 +44,27 @@ const AdminRedirect = () => {
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState("Bangalore");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Check if admin user is already logged in
+    const user = localStorage.getItem('adminUser');
+    if (user) {
+      setIsAuthenticated(true);
+    }
+    setCheckingAuth(false);
+  }, []);
 
   const isCheckPrice = window.location.pathname.includes('/checkprice');
-  const isAdmin = window.location.pathname.startsWith('/admin');
+  const isAdminPath = window.location.pathname.startsWith('/admin');
+
+  if (checkingAuth && isAdminPath) {
+    return <div className="h-screen flex items-center justify-center bg-[#F8FAFC] font-bold text-slate-300 animate-pulse">Establishing Secure Uplink...</div>;
+  }
+
+  const layoutProps = { isCollapsed, setIsCollapsed };
 
   return (
     <AuthProvider>
@@ -54,12 +73,14 @@ function App() {
 
         {!isLoading && (
           <div className="min-h-screen bg-white relative">
-            {!isAdmin && <CityPopup onClose={(city) => city && setSelectedCity(city)} />}
-            {!isAdmin && <Header selectedCity={selectedCity} setSelectedCity={setSelectedCity} />}
-            {!isAdmin && !isCheckPrice && <AlertBar />}
-            {!isAdmin && !isCheckPrice && <LocationBar selectedCity={selectedCity} />}
+            {/* Show Client layout only if NOT in Admin path */}
+            {!isAdminPath && <CityPopup onClose={(city) => city && setSelectedCity(city)} />}
+            {!isAdminPath && <Header selectedCity={selectedCity} setSelectedCity={setSelectedCity} />}
+            {!isAdminPath && !isCheckPrice && <AlertBar />}
+            {!isAdminPath && !isCheckPrice && <LocationBar selectedCity={selectedCity} />}
 
             <Routes>
+              {/* --- CLIENT ROUTES --- */}
               <Route path="/" element={<HomePage />} />
               <Route path="/package" element={<PackagePage />} />
               <Route path="/checkprice" element={<CheckPricePage />} />
@@ -70,11 +91,30 @@ function App() {
               <Route path="/mealbox" element={<MealBoxPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               
-              {/* Admin Gateway */}
-              <Route path="/admin" element={<AdminRedirect />} />
+              {/* --- ADMIN ROUTES --- */}
+              <Route 
+                path="/admin/login" 
+                element={!isAuthenticated ? <AdminLogin setAuth={setIsAuthenticated} /> : <Navigate to="/admin" />} 
+              />
+              <Route 
+                path="/admin" 
+                element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminDashboard /></AdminLayout> : <Navigate to="/admin/login" />} 
+              />
+              <Route 
+                path="/admin/bookings" 
+                element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminBookings /></AdminLayout> : <Navigate to="/admin/login" />} 
+              />
+              <Route 
+                path="/admin/menus" 
+                element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminMenus /></AdminLayout> : <Navigate to="/admin/login" />} 
+              />
+              <Route 
+                path="/admin/users" 
+                element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminUsers /></AdminLayout> : <Navigate to="/admin/login" />} 
+              />
             </Routes>
 
-            {!isAdmin && <Footer />}
+            {!isAdminPath && <Footer />}
           </div>
         )}
       </Router>
