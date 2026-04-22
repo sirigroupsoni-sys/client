@@ -19,7 +19,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router basename="/mscaterers/">
+      <Router>
         <Preloader onComplete={() => setIsLoading(false)} />
 
         {!isLoading && (
