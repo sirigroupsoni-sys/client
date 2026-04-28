@@ -27,6 +27,7 @@ import AdminUsers from './pages/admin/Users';
 import AdminReports from './pages/admin/Reports';
 import AdminCMS from './pages/admin/CMS';
 import AdminLogin from './pages/admin/Login';
+import AdminProducts from './pages/admin/Products';
 
 // Shared Admin Layout Component
 const AdminLayout = ({ children, isCollapsed, setIsCollapsed }) => {
@@ -142,6 +143,10 @@ function App() {
               <Route 
                 path="/admin/cms" 
                 element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminCMS /></AdminLayout> : <Navigate to="/admin/login" />} 
+              />
+              <Route 
+                path="/admin/products" 
+                element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminProducts /></AdminLayout> : <Navigate to="/admin/login" />} 
               />
               {/* Catch-all for unknown admin routes */}
               <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
