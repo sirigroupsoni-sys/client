@@ -57,14 +57,19 @@ const Menus = () => {
   const fetchInitialData = async () => {
     try {
       const catRes = await api.get('/menus/categories');
-      setCategories(catRes.data.categories);
-      if (catRes.data.categories.length > 0) {
-        const firstCatId = catRes.data.categories[0]._id || catRes.data.categories[0].id;
-        setSelectedCategory(firstCatId);
-        fetchMenus(firstCatId);
+      const cats = (catRes.data && catRes.data.categories) || [];
+      setCategories(cats);
+      if (cats.length > 0) {
+        const firstCat = cats[0];
+        const firstCatId = firstCat._id || firstCat.id;
+        if (firstCatId) {
+          setSelectedCategory(firstCatId);
+          fetchMenus(firstCatId);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch categories:', err);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
