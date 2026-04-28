@@ -11,6 +11,10 @@ export default defineConfig({
       '/mscaterers/admin': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
       }
     }
   }

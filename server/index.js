@@ -77,13 +77,19 @@ app.use('/mscaterers/admin', express.static(path.join(__dirname, '../admin/dist'
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // SPA Routing for Admin
-app.get('/mscaterers/admin*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../admin/dist/index.html'));
+app.use('/mscaterers/admin', (req, res, next) => {
+  if (req.method === 'GET' && !req.path.includes('.')) {
+    return res.sendFile(path.resolve(__dirname, '../admin/dist/index.html'));
+  }
+  next();
 });
 
 // SPA Routing for Client
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.includes('.')) {
+    return res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  }
+  next();
 });
 
 // Error Handling Middleware
