@@ -23,10 +23,18 @@ instance.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // If we get a 401 on an admin route, clear the admin session
-      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
+      const isAdminPath = window.location.pathname.includes('/admin');
+      const isLoginPage = window.location.pathname.includes('/login');
+      
+      if (isAdminPath && !isLoginPage) {
         localStorage.removeItem('adminUser');
         localStorage.removeItem('adminToken');
-        window.location.href = '/admin/login';
+        // Redirect to the appropriate login page
+        if (window.location.pathname.startsWith('/mscaterers/admin')) {
+          window.location.href = '/mscaterers/admin/login';
+        } else {
+          window.location.href = '/admin/login';
+        }
       }
     }
     return Promise.reject(error);
