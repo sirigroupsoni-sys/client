@@ -27,19 +27,32 @@ if (process.env.ALLOWED_ORIGINS) {
   });
 }
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Dynamically allow any origin that is making the request
-    // This is safe because we still have authentication and other security measures
-    callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-}));
+// Manual CORS Middleware (More reliable than the package for some environments)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'http://localhost:5173', 
+    'http://localhost:5174',
+    'https://mscaterers-client.onrender.com', 
+    'https://mscaterers-admin.onrender.com',
+    'https://avkart.shop'
+  ];
 
-// Handle preflight requests explicitly
-app.options('*', cors());
+  if (origin && (allowedOrigins.includes(origin) || origin.includes('onrender.com'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -87,7 +100,7 @@ app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // SPA Routing for Admin
 app.use('/mscaterers/admin', (req, res, next) => {
-  if (req.method === 'GET' && !req.path.includes('.')) {
+  if (req.method === 'GET' && !req.path.includes('.') && !req.path.startsWith('/api')) {
     return res.sendFile(path.resolve(__dirname, '../admin/dist/index.html'));
   }
   next();
@@ -95,7 +108,7 @@ app.use('/mscaterers/admin', (req, res, next) => {
 
 // SPA Routing for Client
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.includes('.')) {
+  if (req.method === 'GET' && !req.path.includes('.') && !req.path.startsWith('/api')) {
     return res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   }
   next();
