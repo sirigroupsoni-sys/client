@@ -8,20 +8,13 @@ require('dotenv').config();
 
 const app = express();
 
-// Manual CORS Middleware - High priority
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  // Always reflect the origin or fallback to the client URL to support credentials
-  res.setHeader('Access-Control-Allow-Origin', origin || 'https://mscaterers-client.onrender.com');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-  next();
-});
+// Standard CORS configuration
+app.use(cors({
+  origin: true, // Echo the origin of the request
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+}));
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -45,6 +38,10 @@ connectDB();
 // Basic Route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to MS Caterers MongoDB API' });
+});
+
+app.get('/api/v1/ping', (req, res) => {
+  res.json({ success: true, message: 'pong' });
 });
 
 // Import Routes
