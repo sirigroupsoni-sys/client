@@ -9,27 +9,37 @@ require('dotenv').config();
 const app = express();
 
 // Middlewares
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
-  : [
-      'http://localhost:3000', 
-      'http://localhost:3001', 
-      'http://localhost:5173', 
-      'https://mscaterers-client.onrender.com', 
-      'https://mscaterers-admin.onrender.com'
-    ];
+const allowedOrigins = [
+  'http://localhost:3000', 
+  'http://localhost:3001', 
+  'http://localhost:5173', 
+  'http://localhost:5174',
+  'https://mscaterers-client.onrender.com', 
+  'https://mscaterers-admin.onrender.com',
+  'https://avkart.shop'
+];
+
+if (process.env.ALLOWED_ORIGINS) {
+  process.env.ALLOWED_ORIGINS.split(',').forEach(origin => {
+    if (origin && !allowedOrigins.includes(origin.trim())) {
+      allowedOrigins.push(origin.trim());
+    }
+  });
+}
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'http://localhost:5173', 
-    'https://mscaterers-client.onrender.com', 
-    'https://mscaterers-admin.onrender.com'
-  ],
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
