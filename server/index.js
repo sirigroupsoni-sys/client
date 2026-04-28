@@ -8,24 +8,9 @@ require('dotenv').config();
 
 const app = express();
 
-// Health Check Routes - TOP PRIORITY (Added version to verify deployment)
-app.get('/api/v1/ping', (req, res) => {
-  res.json({ success: true, message: 'pong', version: '1.0.7' });
-});
-
-app.get('/api/v1/health', (req, res) => {
-  const states = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
-  res.json({ 
-    success: true, 
-    database: states[mongoose.connection.readyState] || 'Unknown',
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.7'
-  });
-});
-
 // Standard CORS configuration
 app.use(cors({
-  origin: true, // Echo the origin of the request
+  origin: true, 
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
@@ -36,6 +21,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
+
+// Diagnostic Routes
+app.get('/api/v1/ping', (req, res) => {
+  res.json({ success: true, message: 'pong', version: '1.0.8' });
+});
+
+app.get('/api/v1/health', (req, res) => {
+  const states = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
+  res.json({ 
+    success: true, 
+    database: states[mongoose.connection.readyState] || 'Unknown',
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.8'
+  });
+});
 
 // MongoDB Connection with Auto-Retry
 const connectDB = async () => {
