@@ -8,51 +8,22 @@ require('dotenv').config();
 
 const app = express();
 
-// Middlewares
-const allowedOrigins = [
-  'http://localhost:3000', 
-  'http://localhost:3001', 
-  'http://localhost:5173', 
-  'http://localhost:5174',
-  'https://mscaterers-client.onrender.com', 
-  'https://mscaterers-admin.onrender.com',
-  'https://avkart.shop'
-];
-
-if (process.env.ALLOWED_ORIGINS) {
-  process.env.ALLOWED_ORIGINS.split(',').forEach(origin => {
-    if (origin && !allowedOrigins.includes(origin.trim())) {
-      allowedOrigins.push(origin.trim());
-    }
-  });
-}
-
-// Manual CORS Middleware (More reliable than the package for some environments)
+// Manual CORS Middleware - High priority
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'http://localhost:5173', 
-    'http://localhost:5174',
-    'https://mscaterers-client.onrender.com', 
-    'https://mscaterers-admin.onrender.com',
-    'https://avkart.shop'
-  ];
-
-  if (origin && (allowedOrigins.includes(origin) || origin.includes('onrender.com'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  
+  // Always reflect the origin or fallback to the client URL to support credentials
+  res.setHeader('Access-Control-Allow-Origin', origin || 'https://mscaterers-client.onrender.com');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
   next();
 });
+
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
