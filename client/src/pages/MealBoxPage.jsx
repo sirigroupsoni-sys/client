@@ -22,6 +22,8 @@ const MealBoxPage = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [formData, setFormData] = useState({
     occasion: '',
     guests: '10',
@@ -31,6 +33,7 @@ const MealBoxPage = () => {
 
   useEffect(() => {
     fetchMenus();
+    fetchProducts();
   }, []);
 
   const fetchMenus = async () => {
@@ -44,6 +47,20 @@ const MealBoxPage = () => {
       console.error('Error fetching menus:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const { data } = await api.get('/menus/products?category=MealBox');
+      if (data.success) {
+        setProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setProductsLoading(false);
     }
   };
 
@@ -339,6 +356,62 @@ const MealBoxPage = () => {
              <div className="text-center py-20 text-gray-500 font-bold">
                 No Meal Boxes found. Please seed the database.
              </div>
+          )}
+        </div>
+      </section>
+
+      {/* Individual Products Section */}
+      <section className="py-12 px-4 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black mb-10 text-center font-heading uppercase">
+            Individual <span className="text-[#B70C10]">Meal Boxes</span>
+          </h2>
+
+          {productsLoading ? (
+            <div className="py-20 flex flex-col items-center justify-center text-gray-400">
+              <Loader2 className="animate-spin mb-4" size={40} />
+              <p className="font-bold">Loading meal boxes...</p>
+            </div>
+          ) : products.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {products.map((product) => (
+                <div
+                  key={product._id || product.id}
+                  className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden group hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="h-48 overflow-hidden relative">
+                    <img 
+                      src={product.image || demoImages[0]} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                      alt={product.name} 
+                    />
+                    <div className="absolute top-4 right-4 bg-white p-1.5 rounded-lg shadow-md">
+                      <div className={`w-3 h-3 border-2 ${product.isVeg ? 'border-green-600' : 'border-red-600'} flex items-center justify-center p-0.5`}>
+                        <div className={`w-full h-full rounded-full ${product.isVeg ? 'bg-green-600' : 'bg-red-600'}`}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-black text-lg text-gray-900 tracking-tight">{product.name}</h3>
+                      <span className="text-[#B70C10] font-black text-xl">₹{product.price}</span>
+                    </div>
+                    <p className="text-gray-500 text-xs line-clamp-2 mb-6 h-8">
+                      {product.description || 'Nutritionally balanced and deliciously prepared meal box for your event.'}
+                    </p>
+                    <button className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-[#B70C10] transition-colors flex items-center justify-center gap-2">
+                      <Plus size={16} /> Add to Order
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200">
+              <p className="text-gray-400 font-bold text-lg">No individual meal boxes found.</p>
+              <p className="text-gray-400 text-sm mt-1">Check back later for new offerings.</p>
+            </div>
           )}
         </div>
       </section>

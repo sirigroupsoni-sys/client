@@ -90,7 +90,11 @@ exports.getAddons = async (req, res) => {
 
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find({ isAvailable: true }).sort({ createdAt: -1 });
+    const { category } = req.query;
+    const filter = { isAvailable: true };
+    if (category) filter.category = category;
+    
+    const products = await Product.find(filter).sort({ createdAt: -1 });
     res.status(200).json({ success: true, products });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
