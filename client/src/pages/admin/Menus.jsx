@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { 
   Plus, 
   Search, 
@@ -14,7 +14,8 @@ import {
   X,
   Image as ImageIcon,
   MoreVertical,
-  Filter
+  Filter,
+  Copy
 } from 'lucide-react';
 
 const Menus = () => {
@@ -36,8 +37,12 @@ const Menus = () => {
     description: '', 
     base_price_per_plate: '', 
     min_guests: 10, 
-    category_id: '',
-    image: ''
+    category: '',
+    image: '',
+    starters_count: 0,
+    mains_count: 0,
+    bread_rice_count: 0,
+    dessert_count: 0
   });
   
   const [dishForm, setDishForm] = useState({ 
@@ -55,10 +60,10 @@ const Menus = () => {
 
   const fetchInitialData = async () => {
     try {
-      const catRes = await axios.get('http://localhost:5000/api/v1/menus/categories');
+      const catRes = await api.get('/menus/categories');
       setCategories(catRes.data.categories);
       if (catRes.data.categories.length > 0) {
-        const firstCatId = catRes.data.categories[0].id;
+        const firstCatId = catRes.data.categories[0]._id;
         setSelectedCategory(firstCatId);
         fetchMenus(firstCatId);
       }
@@ -71,7 +76,7 @@ const Menus = () => {
 
   const fetchMenus = async (catId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/v1/menus/category/${catId}`);
+      const res = await api.get(`/menus/category/${catId}`);
       setMenus(res.data.menus);
       setSelectedCategory(catId);
     } catch (err) {
@@ -83,31 +88,84 @@ const Menus = () => {
     e.preventDefault();
     try {
       if (editingMenu) {
-        await axios.patch(`http://localhost:5000/api/v1/admin/menus/${editingMenu.id}`, menuForm, { withCredentials: true });
+        await api.patch(`/admin/menus/${editingMenu._id}`, menuForm);
       } else {
-        await axios.post('http://localhost:5000/api/v1/admin/menus', { ...menuForm, category_id: selectedCategory }, { withCredentials: true });
+        await api.post('/admin/menus', { ...menuForm, category: selectedCategory });
       }
       setShowMenuModal(false);
       setEditingMenu(null);
       fetchMenus(selectedCategory);
     } catch (err) {
-      alert('Error saving menu');
+      alert(err.response?.data?.message || 'Error saving menu');
     }
   };
 
   const handleDeleteMenu = async (id) => {
     if (!confirm('Are you sure? All dishes in this menu will be deleted.')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/v1/admin/menus/${id}`, { withCredentials: true });
+      await api.delete(`/admin/menus/${id}`);
       fetchMenus(selectedCategory);
     } catch (err) {
       alert('Error deleting menu');
     }
   };
 
+  const handleDuplicateMenu = async (menu) => {
+    if (!confirm(`Duplicate "${menu.name}"?`)) return;
+    try {
+      const { _id, createdAt, updatedAt, dishes, ...data } = menu;
+      const res = await api.post('/admin/menus', { 
+        ...data, 
+        name: `${menu.name} (Copy)`,
+        category: selectedCategory 
+      });
+      alert('Package duplicated! You can now add dishes to the new package.');
+      fetchMenus(selectedCategory);
+    } catch (err) {
+      alert('Error duplicating package');
+    }
+  };
+
+  const handleDishSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        menuId: activeMenuForDishes._id,
+        name: dishForm.name,
+        type: dishForm.type,
+        course: dishForm.course,
+        price: dishForm.price,
+        image_url: dishForm.image_url
+      };
+      
+      if (editingDish) {
+        payload.dishId = editingDish._id;
+        await api.patch(`/admin/dishes/${editingDish._id}`, payload);
+      } else {
+        await api.post('/admin/dishes', payload);
+      }
+      
+      setShowDishModal(false);
+      setEditingDish(null);
+      openDishes(activeMenuForDishes); // Refresh dishes
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error saving dish');
+    }
+  };
+
+  const handleDeleteDish = async (dishId) => {
+    if (!confirm('Are you sure you want to delete this dish?')) return;
+    try {
+      await api.delete(`/admin/menus/${activeMenuForDishes._id}/dishes/${dishId}`);
+      openDishes(activeMenuForDishes);
+    } catch (err) {
+      alert('Error deleting dish');
+    }
+  };
+
   const openDishes = async (menu) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/v1/menus/${menu.id}/dishes`);
+      const res = await api.get(`/menus/${menu._id}/dishes`);
       setActiveMenuForDishes({ ...menu, dishes: res.data.dishes });
     } catch (err) {
       console.error(err);
@@ -126,8 +184,18 @@ const Menus = () => {
         </div>
         <button 
           onClick={() => { 
-            setEditingMenu(null); 
-            setMenuForm({ name: '', description: '', base_price_per_plate: '', min_guests: 10, category_id: selectedCategory, image: '' }); 
+            setMenuForm({ 
+              name: '', 
+              description: '', 
+              base_price_per_plate: '', 
+              min_guests: 10, 
+              category: selectedCategory, 
+              image: '',
+              starters_count: 0,
+              mains_count: 0,
+              bread_rice_count: 0,
+              dessert_count: 0
+            }); 
             setShowMenuModal(true); 
           }}
           className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-all flex items-center gap-3"
@@ -147,16 +215,16 @@ const Menus = () => {
             <div className="space-y-2">
               {categories.map((cat) => (
                 <button
-                  key={cat.id}
-                  onClick={() => fetchMenus(cat.id)}
+                  key={cat._id}
+                  onClick={() => fetchMenus(cat._id)}
                   className={`w-full text-left px-4 py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-between group ${
-                    selectedCategory === cat.id 
+                    selectedCategory === cat._id 
                     ? 'bg-blue-50 text-blue-600' 
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   {cat.name}
-                  <ChevronRight size={14} className={`transition-transform ${selectedCategory === cat.id ? 'translate-x-1 opacity-100' : 'opacity-0'}`} />
+                  <ChevronRight size={14} className={`transition-transform ${selectedCategory === cat._id ? 'translate-x-1 opacity-100' : 'opacity-0'}`} />
                 </button>
               ))}
             </div>
@@ -177,10 +245,10 @@ const Menus = () => {
              <div className="divide-y divide-slate-100">
                {menus.map((menu) => (
                  <div 
-                   key={menu.id} 
+                   key={menu._id} 
                    onClick={() => openDishes(menu)}
                    className={`p-6 flex items-center justify-between group cursor-pointer transition-all hover:bg-slate-50/80 ${
-                     activeMenuForDishes?.id === menu.id ? 'bg-blue-50/30 border-l-4 border-blue-500' : 'border-l-4 border-transparent'
+                     activeMenuForDishes?._id === menu._id ? 'bg-blue-50/30 border-l-4 border-blue-500' : 'border-l-4 border-transparent'
                    }`}
                  >
                    <div className="flex items-center gap-6">
@@ -203,10 +271,26 @@ const Menus = () => {
                         <p className="text-sm font-bold text-slate-900 mt-1">₹{menu.base_price_per_plate}</p>
                      </div>
                      <div className="text-right">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Composition</p>
+                        <div className="flex gap-1.5 mt-1 justify-end">
+                           <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold">{menu.starters_count}S</span>
+                           <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-bold">{menu.mains_count}M</span>
+                           <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[9px] font-bold">{menu.bread_rice_count}B/R</span>
+                           <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 rounded text-[9px] font-bold">{menu.dessert_count}D</span>
+                        </div>
+                     </div>
+                     <div className="text-right">
                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Min Qty</p>
-                        <p className="text-sm font-bold text-slate-900 mt-1">{menu.min_guests} Pax</p>
+                        <p className="text-sm font-bold text-slate-900 mt-1">{menu.min_guests || 0} Pax</p>
                      </div>
                      <div className="flex gap-1">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDuplicateMenu(menu); }}
+                          title="Duplicate Package"
+                          className="p-2.5 text-slate-400 hover:text-amber-600 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-100"
+                        >
+                          <Copy size={16} />
+                        </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); setEditingMenu(menu); setMenuForm(menu); setShowMenuModal(true); }}
                           className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-100"
@@ -214,7 +298,7 @@ const Menus = () => {
                           <Edit size={16} />
                         </button>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleDeleteMenu(menu.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteMenu(menu._id); }}
                           className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-100"
                         >
                           <Trash2 size={16} />
@@ -234,27 +318,97 @@ const Menus = () => {
                     <h3 className="text-lg font-bold text-slate-900 tracking-tight">Dish Configuration: {activeMenuForDishes.name}</h3>
                     <p className="text-xs text-slate-400 font-medium mt-1">Manage individual items within this package.</p>
                   </div>
-                  <button className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2">
+                  <button 
+                    onClick={() => {
+                      setEditingDish(null);
+                      setDishForm({ name: '', type: 'Veg', price: 0, image_url: '' });
+                      setShowDishModal(true);
+                    }}
+                    className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2"
+                  >
                     <Plus size={14} />
                     Add Dish
                   </button>
                </div>
                
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {activeMenuForDishes.dishes?.map((dish) => (
-                    <div key={dish.id} className="p-4 bg-slate-50/50 rounded-xl border border-slate-100 flex items-center justify-between hover:border-blue-200 hover:bg-white transition-all group">
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-100 text-slate-300">
-                             {dish.image_url ? <img src={dish.image_url} className="w-full h-full object-cover rounded-lg" /> : <ChefHat size={20} />}
-                          </div>
-                          <div>
-                            <span className="text-sm font-bold text-slate-800 leading-tight block">{dish.name}</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{dish.type} • {dish.course}</span>
-                          </div>
-                       </div>
-                       <button className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14} /></button>
-                    </div>
-                  ))}
+               <div className="space-y-10">
+                  {['Starter', 'Main', 'Rice', 'Bread', 'Dessert'].map((course) => {
+                    const courseDishes = activeMenuForDishes.dishes?.filter(d => d.course === course);
+                    if (!courseDishes?.length) return null;
+
+                    return (
+                      <div key={course} className="animate-in fade-in slide-in-from-left duration-500">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="h-4 w-[3px] bg-blue-600 rounded-full"></div>
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">{course}s</h4>
+                          <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{courseDishes.length} items</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {courseDishes.map((dish) => (
+                            <div key={dish._id} className="p-4 bg-slate-50/50 rounded-xl border border-slate-100 flex items-center justify-between hover:border-blue-200 hover:bg-white transition-all group shadow-sm hover:shadow-md">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-100 overflow-hidden shadow-inner">
+                                  {dish.image_url ? (
+                                    <img src={dish.image_url} className="w-full h-full object-cover" alt={dish.name} />
+                                  ) : (
+                                    <ChefHat size={24} className="text-slate-200" />
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="text-sm font-bold text-slate-800 leading-tight block">{dish.name}</span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <div className={`w-2 h-2 rounded-full ${dish.type === 'Veg' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{dish.type}</span>
+                                    {dish.price > 0 && <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 rounded">+₹{dish.price}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                <button 
+                                  onClick={() => { setEditingDish(dish); setDishForm(dish); setShowDishModal(true); }}
+                                  className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                >
+                                  <Edit size={14} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteDish(dish._id)}
+                                  className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {activeMenuForDishes.dishes?.filter(d => !['Starter', 'Main', 'Rice', 'Bread', 'Dessert'].includes(d.course)).length > 0 && (
+                     <div className="animate-in fade-in slide-in-from-left duration-500">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="h-4 w-[3px] bg-slate-400 rounded-full"></div>
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Uncategorized</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                           {activeMenuForDishes.dishes?.filter(d => !['Starter', 'Main', 'Rice', 'Bread', 'Dessert'].includes(d.course)).map(dish => (
+                              <div key={dish._id} className="p-4 bg-slate-50/50 rounded-xl border border-slate-100 flex items-center justify-between hover:border-blue-200 hover:bg-white transition-all group shadow-sm hover:shadow-md">
+                                 {/* ... same dish card content ... */}
+                                 <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-100 overflow-hidden shadow-inner">
+                                       {dish.image_url ? <img src={dish.image_url} className="w-full h-full object-cover" alt={dish.name} /> : <ChefHat size={24} className="text-slate-200" />}
+                                    </div>
+                                    <div>
+                                       <span className="text-sm font-bold text-slate-800 leading-tight block">{dish.name}</span>
+                                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 block">{dish.type} • {dish.course || 'No Course'}</span>
+                                    </div>
+                                 </div>
+                                 <button onClick={() => handleDeleteDish(dish._id)} className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14} /></button>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
                </div>
             </div>
           )}
@@ -286,8 +440,80 @@ const Menus = () => {
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Image URL</label>
                 <input type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={menuForm.image} onChange={(e) => setMenuForm({...menuForm, image: e.target.value})} />
               </div>
+
+              {/* Item Counts Section */}
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Item Counts</h4>
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Starters</label>
+                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.starters_count} onChange={(e) => setMenuForm({...menuForm, starters_count: e.target.value})} />
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Mains</label>
+                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.mains_count} onChange={(e) => setMenuForm({...menuForm, mains_count: e.target.value})} />
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Bread / Rice</label>
+                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.bread_rice_count} onChange={(e) => setMenuForm({...menuForm, bread_rice_count: e.target.value})} />
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Dessert</label>
+                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.dessert_count} onChange={(e) => setMenuForm({...menuForm, dessert_count: e.target.value})} />
+                   </div>
+                </div>
+              </div>
               <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all mt-4">
                 {editingMenu ? 'Save Changes' : 'Create Package'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dish Modal */}
+      {showDishModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowDishModal(false)}></div>
+          <div className="relative bg-white w-full max-w-md rounded-2xl p-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-200">
+            <h3 className="text-xl font-bold text-slate-900 mb-8">{editingDish ? 'Edit Dish' : 'Add New Dish'}</h3>
+            <form onSubmit={handleDishSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Dish Name</label>
+                <input required type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={dishForm.name} onChange={(e) => setDishForm({...dishForm, name: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Type</label>
+                  <select className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={dishForm.type} onChange={(e) => setDishForm({...dishForm, type: e.target.value})}>
+                    <option value="Veg">Veg</option>
+                    <option value="Non-Veg">Non-Veg</option>
+                    <option value="Jain">Jain</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Extra Price</label>
+                  <input required type="number" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={dishForm.price} onChange={(e) => setDishForm({...dishForm, price: Number(e.target.value)})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Course</label>
+                  <select className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={dishForm.course} onChange={(e) => setDishForm({...dishForm, course: e.target.value})}>
+                    <option value="Starter">Starter</option>
+                    <option value="Main">Main</option>
+                    <option value="Rice">Rice</option>
+                    <option value="Bread">Bread</option>
+                    <option value="Dessert">Dessert</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Image URL</label>
+                  <input type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={dishForm.image_url || ''} onChange={(e) => setDishForm({...dishForm, image_url: e.target.value})} />
+                </div>
+              </div>
+              <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all mt-4">
+                {editingDish ? 'Save Changes' : 'Add Dish'}
               </button>
             </form>
           </div>

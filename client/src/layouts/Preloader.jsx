@@ -53,7 +53,7 @@ const Preloader = ({ onComplete }) => {
               className="mb-14"
             >
               <img 
-                src="logo.png" 
+                src="/logo.png" 
                 alt="MS Caterers" 
                 className="w-[200px] md:w-[260px] object-contain"
               />

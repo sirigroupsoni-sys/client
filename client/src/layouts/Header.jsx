@@ -58,7 +58,7 @@ const Header = ({ selectedCity, setSelectedCity }) => {
         <div className="flex items-center gap-4 md:gap-10">
           {/* Logo */}
           <Link to="/" className={`transition-all duration-500 flex items-center ${isScrolled ? 'h-[45px] md:h-[55px]' : 'h-[60px] md:h-[75px]'}`}>
-            <img src="logo.png" alt="MS Caterers Logo" className="h-full w-auto object-contain" />
+            <img src="/logo.png" alt="MS Caterers Logo" className="h-full w-auto object-contain" />
           </Link>
 
           {/* City Selector */}
@@ -100,6 +100,7 @@ const Header = ({ selectedCity, setSelectedCity }) => {
                         className="w-full text-left px-3 py-2.5 text-sm hover:bg-mscaterers-red/5 rounded-xl transition-all flex items-center justify-between group"
                         onClick={() => {
                           setSelectedCity(city);
+                          localStorage.setItem('selectedCity', city);
                           setIsCityOpen(false);
                         }}
                       >

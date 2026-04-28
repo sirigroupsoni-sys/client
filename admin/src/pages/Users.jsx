@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { 
   Search, 
   Filter, 
@@ -29,8 +29,8 @@ const Users = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/v1/admin/users', { withCredentials: true });
-      setUsers(res.data.users);
+      const res = await api.get('/admin/users');
+      setUsers(res.data.users || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -40,7 +40,7 @@ const Users = () => {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      await axios.patch(`http://localhost:5000/api/v1/admin/users/${userId}/role`, { role: newRole }, { withCredentials: true });
+      await api.patch(`/admin/users/${userId}/role`, { role: newRole });
       fetchUsers();
     } catch (err) {
       alert('Failed to update role');
@@ -48,12 +48,12 @@ const Users = () => {
   };
 
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+    (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const getRoleBadgeStyle = (role) => {
-    switch (role) {
+    switch (role?.toLowerCase()) {
       case 'admin': return 'text-rose-600 bg-rose-50 border-rose-100';
       case 'manager': return 'text-blue-600 bg-blue-50 border-blue-100';
       default: return 'text-slate-500 bg-slate-50 border-slate-100';
@@ -110,15 +110,15 @@ const Users = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="group hover:bg-slate-50/50 transition-all">
+                <tr key={user._id || user.id} className="group hover:bg-slate-50/50 transition-all">
                   <td className="py-5 px-6">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-slate-400 group-hover:bg-white group-hover:text-blue-600 transition-all uppercase text-sm border border-slate-200/50">
-                        {user.name.charAt(0)}
+                        {user.name?.charAt(0) || '?'}
                       </div>
                       <div>
-                        <div className="font-bold text-slate-900 text-sm tracking-tight">{user.name}</div>
-                        <div className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-tighter">ID: {user.id.slice(-6)}</div>
+                        <div className="font-bold text-slate-900 text-sm tracking-tight">{user.name || 'Anonymous User'}</div>
+                        <div className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-tighter">ID: {String(user?._id || user?.id || '......').slice(-6)}</div>
                       </div>
                     </div>
                   </td>
@@ -138,11 +138,11 @@ const Users = () => {
                     <select 
                       className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border outline-none cursor-pointer transition-all ${getRoleBadgeStyle(user.role)}`}
                       value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      onChange={(e) => handleRoleChange(user._id || user.id, e.target.value)}
                     >
-                      <option value="customer">Customer</option>
-                      <option value="manager">Manager</option>
-                      <option value="admin">System Admin</option>
+                      <option value="Customer">Customer</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Admin">System Admin</option>
                     </select>
                   </td>
                   <td className="py-5 px-6">

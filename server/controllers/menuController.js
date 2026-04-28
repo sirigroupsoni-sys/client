@@ -1,5 +1,6 @@
 const Category = require('../models/Category');
 const Menu = require('../models/Menu');
+const Product = require('../models/Product');
 
 exports.getCategories = async (req, res) => {
   try {
@@ -10,9 +11,31 @@ exports.getCategories = async (req, res) => {
   }
 };
 
+exports.getAllMenus = async (req, res) => {
+  try {
+    const menus = await Menu.find().populate('category');
+    res.status(200).json({ success: true, menus });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
 exports.getMenusByCategory = async (req, res) => {
   try {
     const menus = await Menu.find({ category: req.params.categoryId });
+    res.status(200).json({ success: true, menus });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.getMenusByCategoryName = async (req, res) => {
+  try {
+    const category = await Category.findOne({ name: req.params.categoryName });
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+    const menus = await Menu.find({ category: category._id });
     res.status(200).json({ success: true, menus });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -60,6 +83,15 @@ exports.getAddons = async (req, res) => {
   try {
     // Returning empty array since Addon model doesn't exist yet
     res.status(200).json({ success: true, addons: [] });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.getProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ isAvailable: true }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, products });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { 
   Search, 
   Calendar,
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 const Bookings = () => {
+  console.log("Bookings Rendering - Version 3.0");
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -31,7 +32,7 @@ const Bookings = () => {
 
   const fetchBookings = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/v1/admin/bookings', { withCredentials: true });
+      const res = await api.get('/admin/bookings');
       setBookings(res.data.bookings);
     } catch (err) {
       console.error(err);
@@ -42,9 +43,9 @@ const Bookings = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.patch(`http://localhost:5000/api/v1/bookings/${id}/status`, { status }, { withCredentials: true });
+      await api.patch(`/bookings/${id}/status`, { status });
       fetchBookings();
-      if (selectedBooking?.id === id) {
+      if ((selectedBooking?._id || selectedBooking?.id) === id) {
         setSelectedBooking({ ...selectedBooking, status });
       }
     } catch (err) {
@@ -96,23 +97,27 @@ const Bookings = () => {
          <div className="divide-y divide-slate-100">
            {bookings.map((booking) => (
              <div 
-               key={booking.id} 
+               key={booking._id || booking.id} 
                onClick={() => { setSelectedBooking(booking); setShowDetailModal(true); }}
                className="p-6 flex items-center justify-between group cursor-pointer transition-all hover:bg-slate-50/80"
              >
-               <div className="flex items-center gap-6 flex-1">
-                  <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-slate-500 text-lg uppercase shadow-inner border border-slate-200/50">
-                    {booking.customer_name.charAt(0)}
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">{booking.customer_name}</h4>
-                    <div className="flex items-center gap-3 mt-1.5">
-                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">#{booking.booking_id}</span>
-                       <span className="text-slate-400 text-xs">•</span>
-                       <span className="text-blue-500 font-bold text-xs">{booking.menu_name || 'Signature Experience'}</span>
-                    </div>
-                  </div>
-               </div>
+                <div className="flex items-center gap-6 flex-1">
+                   <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-slate-500 text-lg uppercase shadow-inner border border-slate-200/50">
+                     {(booking?.user?.name || booking?.customer_name || '?')[0].toUpperCase()}
+                   </div>
+                   <div>
+                     <h4 className="text-base font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
+                        {booking?.user?.name || booking?.customer_name || 'Unknown Customer'}
+                     </h4>
+                     <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">
+                           #{booking?.bookingId || booking?.booking_id || 'N/A'}
+                        </span>
+                        <span className="text-slate-400 text-xs">•</span>
+                        <span className="text-blue-500 font-bold text-xs">{booking?.menu?.name || booking?.menu_name || 'Signature Experience'}</span>
+                     </div>
+                   </div>
+                </div>
 
                <div className="flex items-center gap-16 flex-1 justify-end">
                   <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs">
@@ -126,9 +131,11 @@ const Bookings = () => {
                   <div className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${getStatusStyle(booking.status)}`}>
                     {booking.status}
                   </div>
-                  <div className="text-right w-24">
-                     <span className="text-sm font-bold text-slate-900">₹{parseFloat(booking.total_price).toLocaleString()}</span>
-                  </div>
+                   <div className="text-right w-24">
+                     <span className="text-sm font-bold text-slate-900">
+                        ₹{(booking?.pricingBreakdown?.total || booking?.total_price || 0).toLocaleString()}
+                     </span>
+                   </div>
                   <button className="p-2 text-slate-300 hover:text-slate-600 transition-all opacity-0 group-hover:opacity-100">
                      <ChevronRight size={20} />
                   </button>
@@ -145,48 +152,48 @@ const Bookings = () => {
           <div className="relative bg-white w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-200">
              {/* Header */}
              <div className="p-8 border-b border-slate-100 flex justify-between items-start bg-slate-50/30">
-                <div>
-                   <div className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest border mb-3 ${getStatusStyle(selectedBooking.status)}`}>
-                      {selectedBooking.status}
-                   </div>
-                   <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedBooking.customer_name}</h2>
-                   <p className="text-xs text-slate-400 font-medium mt-1">Transaction ID: {selectedBooking.booking_id}</p>
-                </div>
+                 <div>
+                    <div className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest border mb-3 ${getStatusStyle(selectedBooking.status)}`}>
+                       {selectedBooking.status}
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedBooking.user?.name || 'Unknown Customer'}</h2>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Transaction ID: {selectedBooking.bookingId}</p>
+                 </div>
                 <button onClick={() => setShowDetailModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"><X size={20} /></button>
              </div>
 
              <div className="p-8 space-y-8">
                 <div className="grid grid-cols-2 gap-8">
-                   <div className="space-y-1">
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Phone</p>
-                      <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><Phone size={14} className="text-blue-500" /> {selectedBooking.phone || 'N/A'}</p>
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Email</p>
-                      <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><Mail size={14} className="text-blue-500" /> {selectedBooking.email || 'N/A'}</p>
-                   </div>
+                    <div className="space-y-1">
+                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Phone</p>
+                       <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><Phone size={14} className="text-blue-500" /> {selectedBooking.user?.phone || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Email</p>
+                       <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><Mail size={14} className="text-blue-500" /> {selectedBooking.user?.email || 'N/A'}</p>
+                    </div>
                    <div className="space-y-1 col-span-2">
                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Location</p>
                       <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><MapPin size={14} className="text-blue-500" /> {selectedBooking.location}</p>
                    </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
-                   <div>
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Total Valuation</p>
-                      <p className="text-2xl font-black text-slate-900 mt-1">₹{parseFloat(selectedBooking.total_price).toLocaleString()}</p>
-                   </div>
+                 <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
+                    <div>
+                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Total Valuation</p>
+                       <p className="text-2xl font-black text-slate-900 mt-1">₹{(selectedBooking.pricingBreakdown?.total || 0).toLocaleString()}</p>
+                    </div>
                    <div className="flex gap-3">
                       {selectedBooking.status === 'Pending' && (
                          <>
                             <button 
-                              onClick={() => updateStatus(selectedBooking.id, 'Cancelled')}
+                              onClick={() => updateStatus(selectedBooking._id || selectedBooking.id, 'Cancelled')}
                               className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all"
                             >
                               Reject
                             </button>
                             <button 
-                              onClick={() => updateStatus(selectedBooking.id, 'Confirmed')}
+                              onClick={() => updateStatus(selectedBooking._id || selectedBooking.id, 'Confirmed')}
                               className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-all"
                             >
                               Confirm Order

@@ -43,7 +43,7 @@ const SnackBoxPage = () => {
     try {
       setLoading(true);
       // Assuming Category 1 is for MSCATERERSBox based on seed data
-      const { data } = await api.get('/menus/category/1');
+      const { data } = await api.get('/menus/category-name/SnackBox');
       if (data.success) {
         setMenus(data.menus);
       }

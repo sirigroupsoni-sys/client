@@ -13,6 +13,7 @@ import {
   Loader2
 } from 'lucide-react';
 import WhatsAppCTA from '../components/common/WhatsAppCTA';
+import MenuPopup from '../components/common/MenuPopup';
 import api from '../api/axios';
 import food_5 from '../assets/food_5.png';
 import banner1 from '../assets/banner1.png';
@@ -34,6 +35,8 @@ const MSCATERERSBoxPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [quoteLoading, setQuoteLoading] = React.useState(null);
   const [showQuote, setShowQuote] = React.useState(null);
+  const [isBookingOpen, setIsBookingOpen] = React.useState(false);
+  const [selectedMenuForBooking, setSelectedMenuForBooking] = React.useState(null);
 
   useEffect(() => {
     fetchMenus();
@@ -43,7 +46,7 @@ const MSCATERERSBoxPage = () => {
     try {
       setLoading(true);
       // Assuming Category 1 is for MSCATERERSBox based on seed data
-      const { data } = await api.get('/menus/category/1');
+      const { data } = await api.get('/menus/category-name/MSCATERERSBox');
       if (data.success) {
         setMenus(data.menus);
       }
@@ -451,12 +454,14 @@ const MSCATERERSBoxPage = () => {
                         <div className="text-right">
                           <p className="text-[10px] text-yellow-400 font-bold mb-2">Next Available<br />Tomorrow 4:00 PM</p>
                           <button 
-                            onClick={() => calculateQuote(item.id)}
-                            disabled={quoteLoading === item.id}
+                            onClick={() => {
+                              setSelectedMenuForBooking(item);
+                              setIsBookingOpen(true);
+                            }}
                             className="bg-[#B70C10] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-white hover:text-[#B70C10] transition-all disabled:opacity-50"
                           >
-                            {quoteLoading === item.id ? <Loader2 className="animate-spin" size={14} /> : <div className="w-4 h-4 rounded border-2 border-current flex items-center justify-center text-[10px]">+</div>}
-                            View Price
+                            <div className="w-4 h-4 rounded border-2 border-current flex items-center justify-center text-[10px]">+</div>
+                            View Menu
                           </button>
                         </div>
                       </div>
@@ -471,47 +476,12 @@ const MSCATERERSBoxPage = () => {
             </div>
           </div>
 
-          {/* Price Breakdown Modal */}
-          {showQuote && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
-                <div className="p-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-2xl font-black text-gray-900 font-heading">Price Breakdown</h3>
-                    <button onClick={() => setShowQuote(null)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
-                  </div>
-                  
-                  <div className="space-y-4 border-b border-gray-100 pb-6 mb-6">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Base Price (₹{showQuote.basePricePerPlate} x {showQuote.guestCount})</span>
-                      <span className="font-bold text-gray-900">₹{showQuote.menuTotal}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Add-ons Total</span>
-                      <span className="font-bold text-gray-900">₹{showQuote.addonsTotal}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Subtotal</span>
-                      <span className="font-bold text-gray-900">₹{showQuote.subtotal}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>GST (18%)</span>
-                      <span className="font-bold text-gray-900">₹{Math.round(showQuote.taxAmount)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center mb-8">
-                    <span className="text-xl font-black text-gray-900">Total Amount</span>
-                    <span className="text-3xl font-black text-[#B70C10]">₹{Math.round(showQuote.total)}</span>
-                  </div>
-
-                  <button className="w-full py-4 bg-[#B70C10] text-white rounded-2xl font-black text-lg shadow-xl shadow-red-500/20 hover:scale-[1.02] transition-all">
-                    Proceed to Booking
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Menu Popup Integration */}
+          <MenuPopup 
+            isOpen={isBookingOpen} 
+            onClose={() => setIsBookingOpen(false)} 
+            menuData={selectedMenuForBooking} 
+          />
         </div>
       </section>
 

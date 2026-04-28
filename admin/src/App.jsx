@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Bookings from './pages/Bookings';
 import Menus from './pages/Menus';
 import Users from './pages/Users';
+import Products from './pages/Products';
 import Login from './pages/Login';
 
 // Shared Layout Component
@@ -48,7 +49,7 @@ function App() {
   const layoutProps = { isCollapsed, setIsCollapsed };
 
   return (
-    <Router>
+    <Router basename="/admin">
       <Routes>
         {/* Public Routes */}
         <Route 
@@ -72,6 +73,10 @@ function App() {
         <Route 
           path="/users" 
           element={isAuthenticated ? <AdminLayout {...layoutProps}><Users /></AdminLayout> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/products" 
+          element={isAuthenticated ? <AdminLayout {...layoutProps}><Products /></AdminLayout> : <Navigate to="/login" />} 
         />
         <Route 
           path="/reports" 

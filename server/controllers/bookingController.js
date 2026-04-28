@@ -1,71 +1,47 @@
-const db = require('../config/db');
+const Booking = require('../models/Booking');
 
 exports.createBooking = async (req, res) => {
-  const connection = await db.getConnection();
   try {
-    await connection.beginTransaction();
-
     const { 
-      menuId, eventDate, eventTime, location, guestCount, 
-      totalPrice, selectedDishIds, selectedAddonIds 
+      menuId, eventDate, eventTime, location, guests, 
+      totalPrice, breakdown 
     } = req.body;
     
     const userId = req.user.id;
     const bookingId = `BK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // 1. Insert into bookings table
-    const [bookingResult] = await connection.execute(
-      'INSERT INTO bookings (booking_id, user_id, menu_id, event_date, event_time, location, guest_count, total_price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [bookingId, userId, menuId, eventDate, eventTime, location, guestCount, totalPrice, 'Pending']
-    );
+    const newBooking = await Booking.create({
+      bookingId,
+      user: userId,
+      menu: menuId,
+      eventDate,
+      eventTime,
+      location: location || 'Not Specified',
+      guestCount: guests,
+      pricingBreakdown: {
+        subtotal: breakdown.basePrice,
+        tax: breakdown.gst,
+        total: breakdown.total
+      },
+      status: 'Pending'
+    });
 
-    const internalId = bookingResult.insertId;
-
-    // 2. Insert selected dishes
-    if (selectedDishIds && selectedDishIds.length > 0) {
-      for (const dishId of selectedDishIds) {
-        await connection.execute(
-          'INSERT INTO booking_dishes (booking_id, dish_id) VALUES (?, ?)',
-          [internalId, dishId]
-        );
-      }
-    }
-
-    // 3. Insert selected add-ons
-    if (selectedAddonIds && selectedAddonIds.length > 0) {
-      for (const addonId of selectedAddonIds) {
-        await connection.execute(
-          'INSERT INTO booking_addons (booking_id, addon_id, quantity) VALUES (?, ?, ?)',
-          [internalId, addonId, 1]
-        );
-      }
-    }
-
-    await connection.commit();
     res.status(201).json({
       success: true,
       message: 'Booking created successfully',
-      bookingId
+      bookingId: newBooking.bookingId
     });
   } catch (err) {
-    await connection.rollback();
     res.status(400).json({ success: false, message: err.message });
-  } finally {
-    connection.release();
   }
 };
 
 exports.getMyBookings = async (req, res) => {
   try {
     const userId = req.user.id;
-    const [bookings] = await db.execute(
-      `SELECT b.*, m.name as menu_name 
-       FROM bookings b 
-       LEFT JOIN menus m ON b.menu_id = m.id 
-       WHERE b.user_id = ? 
-       ORDER BY b.created_at DESC`,
-      [userId]
-    );
+    const bookings = await Booking.find({ user: userId })
+      .populate('menu', 'name')
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, bookings });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -74,36 +50,14 @@ exports.getMyBookings = async (req, res) => {
 
 exports.getBookingDetails = async (req, res) => {
   try {
-    const { id } = req.params; // internal ID or booking_id
-    const [bookings] = await db.execute(
-      'SELECT b.*, m.name as menu_name FROM bookings b LEFT JOIN menus m ON b.menu_id = m.id WHERE b.id = ? OR b.booking_id = ?',
-      [id, id]
-    );
+    const { id } = req.params;
+    const booking = await Booking.findById(id)
+      .populate('user', 'name email phone')
+      .populate('menu', 'name image');
     
-    if (bookings.length === 0) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
     
-    const booking = bookings[0];
-
-    // Fetch dishes
-    const [dishes] = await db.execute(
-      'SELECT d.* FROM dishes d JOIN booking_dishes bd ON d.id = bd.dish_id WHERE bd.booking_id = ?',
-      [booking.id]
-    );
-
-    // Fetch add-ons
-    const [addons] = await db.execute(
-      'SELECT a.*, ba.quantity FROM add_ons a JOIN booking_addons ba ON a.id = ba.addon_id WHERE ba.booking_id = ?',
-      [booking.id]
-    );
-
-    res.status(200).json({
-      success: true,
-      booking: {
-        ...booking,
-        dishes,
-        addons
-      }
-    });
+    res.status(200).json({ success: true, booking });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -114,9 +68,37 @@ exports.updateBookingStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
-    await db.execute('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+    const booking = await Booking.findByIdAndUpdate(id, { status }, { new: true });
     
-    res.status(200).json({ success: true, message: 'Booking status updated' });
+    res.status(200).json({ success: true, message: 'Booking status updated', booking });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.duplicateBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    const original = await Booking.findById(bookingId);
+    
+    if (!original) return res.status(404).json({ success: false, message: 'Original booking not found' });
+    
+    const newBookingId = `BK-DUP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    const duplicate = await Booking.create({
+      bookingId: newBookingId,
+      user: req.user.id,
+      menu: original.menu,
+      eventDate: new Date(), // Default to today, user can change later
+      eventTime: original.eventTime,
+      location: original.location,
+      guestCount: original.guestCount,
+      addons: original.addons,
+      pricingBreakdown: original.pricingBreakdown,
+      status: 'Pending'
+    });
+    
+    res.status(201).json({ success: true, message: 'Order duplicated successfully', bookingId: duplicate.bookingId });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

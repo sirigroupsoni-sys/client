@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 const AlertBar = () => {
-  const message = "Due to the ongoing gas supply limitations across India, certain menu items may not be available till 28th March 2026";
+  const message = "Due to the ongoing gas supply limitations across India, certain menu items may not be available till 28th April 2026";
 
   return (
     <div className="relative w-full overflow-hidden py-3 border-y border-yellow-200/40 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck, ArrowRight } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const Login = ({ setAuth }) => {
     setError('');
 
     try {
-      const res = await axios.post('http://localhost:5000/api/v1/auth/login', { email, password }, { withCredentials: true });
+      const res = await api.post('/auth/login', { email, password });
       
       if (res.data.success) {
         const userRole = res.data.user.role.toLowerCase();

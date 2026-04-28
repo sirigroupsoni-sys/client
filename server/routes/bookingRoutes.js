@@ -4,13 +4,15 @@ const {
   createBooking, 
   getMyBookings, 
   getBookingDetails, 
-  updateBookingStatus 
+  updateBookingStatus,
+  duplicateBooking
 } = require('../controllers/bookingController');
 const { protect } = require('../middlewares/authMiddleware');
 
 router.use(protect);
 
 router.post('/', createBooking);
+router.post('/duplicate', duplicateBooking);
 router.get('/my', getMyBookings);
 router.get('/:id', getBookingDetails);
 router.patch('/:id/status', updateBookingStatus);

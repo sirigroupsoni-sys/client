@@ -3,13 +3,24 @@ const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 
 // Middlewares
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -50,6 +61,22 @@ app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/manager', managerRoutes);
 app.use('/api/v1/employee', employeeRoutes);
+
+// Static files for Admin Panel (served at /mscaterers/admin)
+app.use('/mscaterers/admin', express.static(path.join(__dirname, '../admin/dist')));
+
+// Static files for Client (served at /)
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// SPA Routing for Admin
+app.get(/\/mscaterers\/admin.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
+});
+
+// SPA Routing for Client
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

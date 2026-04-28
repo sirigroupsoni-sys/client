@@ -12,7 +12,7 @@ const Footer = () => {
         <div className="flex flex-col max-w-[340px] text-center lg:text-left items-center lg:items-start">
           {/* Official Logo Integration */}
           <div className="mb-6 flex items-center h-[100px] lg:h-[130px]">
-            <img src="logo.png" alt="MS Caterers Logo" className="h-full w-auto object-contain mix-blend-multiply scale-[1.2] lg:scale-[1.3] origin-center lg:origin-left" />
+            <img src="/logo.png" alt="MS Caterers Logo" className="h-full w-auto object-contain mix-blend-multiply scale-[1.2] lg:scale-[1.3] origin-center lg:origin-left" />
           </div>
           <p className="text-[#555] text-[14px] leading-[2.2] font-medium">
             MS Caterers is India's largest digital catering brand, catering to customers' needs, for small or large groups, at home or at office.

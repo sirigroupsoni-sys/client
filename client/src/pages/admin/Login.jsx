@@ -23,6 +23,7 @@ const Login = ({ setAuth }) => {
         const userRole = res.data.user.role.toLowerCase();
         if (userRole === 'admin' || userRole === 'manager') {
           localStorage.setItem('adminUser', JSON.stringify(res.data.user));
+          localStorage.setItem('adminToken', res.data.token);
           setAuth(true);
         } else {
           setError('Unauthorized Access: Admin privileges required.');

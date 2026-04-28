@@ -24,6 +24,8 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminBookings from './pages/admin/Bookings';
 import AdminMenus from './pages/admin/Menus';
 import AdminUsers from './pages/admin/Users';
+import AdminReports from './pages/admin/Reports';
+import AdminCMS from './pages/admin/CMS';
 import AdminLogin from './pages/admin/Login';
 
 // Shared Admin Layout Component
@@ -43,7 +45,10 @@ const AdminLayout = ({ children, isCollapsed, setIsCollapsed }) => {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCity, setSelectedCity] = useState("Bangalore");
+  const [selectedCity, setSelectedCity] = useState(() => {
+    return localStorage.getItem('selectedCity') || "Bangalore";
+  });
+  const [showCityPopup, setShowCityPopup] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -66,6 +71,14 @@ function App() {
 
   const layoutProps = { isCollapsed, setIsCollapsed };
 
+  const handleCityChange = (city) => {
+    if (city) {
+      setSelectedCity(city);
+      localStorage.setItem('selectedCity', city);
+    }
+    setShowCityPopup(false);
+  };
+
   return (
     <AuthProvider>
       <Router>
@@ -74,10 +87,20 @@ function App() {
         {!isLoading && (
           <div className="min-h-screen bg-white relative">
             {/* Show Client layout only if NOT in Admin path */}
-            {!isAdminPath && <CityPopup onClose={(city) => city && setSelectedCity(city)} />}
+            {!isAdminPath && (
+              <CityPopup 
+                isOpen={showCityPopup} 
+                onClose={handleCityChange} 
+              />
+            )}
             {!isAdminPath && <Header selectedCity={selectedCity} setSelectedCity={setSelectedCity} />}
             {!isAdminPath && !isCheckPrice && <AlertBar />}
-            {!isAdminPath && !isCheckPrice && <LocationBar selectedCity={selectedCity} />}
+            {!isAdminPath && !isCheckPrice && (
+              <LocationBar 
+                selectedCity={selectedCity} 
+                onEdit={() => setShowCityPopup(true)} 
+              />
+            )}
 
             <Routes>
               {/* --- CLIENT ROUTES --- */}
@@ -112,6 +135,16 @@ function App() {
                 path="/admin/users" 
                 element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminUsers /></AdminLayout> : <Navigate to="/admin/login" />} 
               />
+              <Route 
+                path="/admin/reports" 
+                element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminReports /></AdminLayout> : <Navigate to="/admin/login" />} 
+              />
+              <Route 
+                path="/admin/cms" 
+                element={isAuthenticated ? <AdminLayout {...layoutProps}><AdminCMS /></AdminLayout> : <Navigate to="/admin/login" />} 
+              />
+              {/* Catch-all for unknown admin routes */}
+              <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
             </Routes>
 
             {!isAdminPath && <Footer />}

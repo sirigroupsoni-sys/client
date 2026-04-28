@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import axios from 'axios';
+import API from '../../api/axios';
 import { 
   LayoutDashboard, 
   CalendarCheck, 
@@ -26,7 +26,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:5000/api/v1/auth/logout', {}, { withCredentials: true });
+      await API.post('/auth/logout');
     } catch (err) {
       console.error('Server logout failed');
     }
@@ -74,11 +74,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             </div>
             {!isCollapsed && <span className="tracking-tight text-sm">{item.label}</span>}
             
-            <NavLink
-              to={item.path}
-              className={({ isActive }) => 
-                `absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full transition-opacity ${isActive ? 'opacity-100' : 'opacity-0'}`
-              }
+            <div 
+              className={`absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full transition-opacity ${
+                window.location.pathname === item.path || (item.path !== '/' && window.location.pathname.startsWith(item.path)) 
+                ? 'opacity-100' : 'opacity-0'
+              }`}
             />
           </NavLink>
         ))}

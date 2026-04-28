@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Menu = require('../models/Menu');
 const Category = require('../models/Category');
 const Booking = require('../models/Booking');
+const Product = require('../models/Product');
 
 exports.getAnalytics = async (req, res) => {
   try {
@@ -102,10 +103,10 @@ exports.getAllBookings = async (req, res) => {
 
 exports.addDish = async (req, res) => {
   try {
-    const { menuId, name, type, price } = req.body;
+    const { menuId, name, type, course, price, image_url } = req.body;
     const menu = await Menu.findByIdAndUpdate(
       menuId,
-      { $push: { dishes: { name, type, price } } },
+      { $push: { dishes: { name, type, course, price, image_url } } },
       { new: true }
     );
     res.status(200).json({ success: true, menu });
@@ -116,14 +117,16 @@ exports.addDish = async (req, res) => {
 
 exports.updateDish = async (req, res) => {
   try {
-    const { menuId, dishId, name, type, price } = req.body;
+    const { menuId, dishId, name, type, course, price, image_url } = req.body;
     const menu = await Menu.findOneAndUpdate(
       { _id: menuId, "dishes._id": dishId },
       { 
         $set: { 
           "dishes.$.name": name, 
           "dishes.$.type": type, 
-          "dishes.$.price": price 
+          "dishes.$.course": course,
+          "dishes.$.price": price,
+          "dishes.$.image_url": image_url
         } 
       },
       { new: true }
@@ -156,6 +159,46 @@ exports.assignManager = async (req, res) => {
       { new: true }
     );
     res.status(200).json({ success: true, booking });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// Product CRUD
+exports.getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, products });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.createProduct = async (req, res) => {
+  try {
+    const product = await Product.create(req.body);
+    res.status(201).json({ success: true, product });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    res.status(200).json({ success: true, product });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteProduct = async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: 'Product deleted' });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { 
   LayoutDashboard, 
   CalendarCheck, 
   Users, 
   UtensilsCrossed, 
+  Package,
   Settings, 
   LogOut,
   TrendingUp,
@@ -19,6 +20,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: CalendarCheck, label: 'Bookings', path: '/bookings' },
     { icon: UtensilsCrossed, label: 'Menu Mgmt', path: '/menus' },
+    { icon: Package, label: 'Products', path: '/products' },
     { icon: Users, label: 'Users', path: '/users' },
     { icon: TrendingUp, label: 'Reports', path: '/reports' },
     { icon: FileText, label: 'CMS', path: '/cms' },
@@ -26,7 +28,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:5000/api/v1/auth/logout', {}, { withCredentials: true });
+      await api.post('/auth/logout', {});
     } catch (err) {
       console.error('Server logout failed');
     }
@@ -74,11 +76,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             </div>
             {!isCollapsed && <span className="tracking-tight text-sm">{item.label}</span>}
             
-            <NavLink
-              to={item.path}
-              className={({ isActive }) => 
-                `absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full transition-opacity ${isActive ? 'opacity-100' : 'opacity-0'}`
-              }
+            <div 
+              className={`absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full transition-opacity ${
+                window.location.pathname === item.path || (item.path !== '/' && window.location.pathname.startsWith(item.path)) 
+                ? 'opacity-100' : 'opacity-0'
+              }`}
             />
           </NavLink>
         ))}
