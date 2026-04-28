@@ -8,6 +8,21 @@ require('dotenv').config();
 
 const app = express();
 
+// Health Check Routes - TOP PRIORITY (Added version to verify deployment)
+app.get('/api/v1/ping', (req, res) => {
+  res.json({ success: true, message: 'pong', version: '1.0.7' });
+});
+
+app.get('/api/v1/health', (req, res) => {
+  const states = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
+  res.json({ 
+    success: true, 
+    database: states[mongoose.connection.readyState] || 'Unknown',
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.7'
+  });
+});
+
 // Standard CORS configuration
 app.use(cors({
   origin: true, // Echo the origin of the request
@@ -40,18 +55,6 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to MS Caterers MongoDB API' });
 });
 
-app.get('/api/v1/ping', (req, res) => {
-  res.json({ success: true, message: 'pong' });
-});
-
-app.get('/api/v1/health', (req, res) => {
-  const states = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
-  res.json({ 
-    success: true, 
-    database: states[mongoose.connection.readyState],
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
