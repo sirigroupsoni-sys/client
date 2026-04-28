@@ -44,6 +44,15 @@ app.get('/api/v1/ping', (req, res) => {
   res.json({ success: true, message: 'pong' });
 });
 
+app.get('/api/v1/health', (req, res) => {
+  const states = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
+  res.json({ 
+    success: true, 
+    database: states[mongoose.connection.readyState],
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const menuRoutes = require('./routes/menuRoutes');
