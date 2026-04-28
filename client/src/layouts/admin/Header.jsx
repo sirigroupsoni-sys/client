@@ -2,6 +2,10 @@ import React from 'react';
 import { Search, Bell, ChevronDown, User } from 'lucide-react';
 
 const Header = () => {
+  const user = JSON.parse(localStorage.getItem('adminUser') || '{}');
+  const name = user.name || 'Admin';
+  const role = user.role || 'Super Admin';
+
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-8 py-4 flex items-center justify-between shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
       {/* Search Bar */}
@@ -27,8 +31,8 @@ const Header = () => {
         {/* User Profile */}
         <button className="flex items-center gap-3 p-1.5 pl-4 pr-2 bg-slate-100/50 rounded-2xl border border-transparent hover:border-slate-200 hover:bg-white transition-all group">
           <div className="flex flex-col items-end">
-            <span className="text-[13px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Vikas Admin</span>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Super Admin</span>
+            <span className="text-[13px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{name}</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{role}</span>
           </div>
           <div className="w-10 h-10 bg-slate-200 rounded-xl flex items-center justify-center text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
             <User size={20} />
