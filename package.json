@@ -1,0 +1,13 @@
+{
+  "name": "ms-caterers-root",
+  "version": "1.0.0",
+  "description": "Root package for MS Caterers Management System",
+  "scripts": {
+    "install-all": "npm install && cd client && npm install && cd ../admin && npm install && cd ../server && npm install",
+    "build": "cd client && npm install && npm run build && cd ../admin && npm install && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

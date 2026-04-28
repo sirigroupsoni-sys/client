@@ -69,8 +69,8 @@ app.use('/mscaterers/admin', express.static(path.join(__dirname, '../admin/dist'
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // SPA Routing for Admin
-app.get(/\/mscaterers\/admin.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
+app.get('/mscaterers/admin*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../admin/dist/index.html'));
 });
 
 // SPA Routing for Client
