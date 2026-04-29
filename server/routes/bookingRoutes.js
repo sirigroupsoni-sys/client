@@ -9,12 +9,10 @@ const {
 } = require('../controllers/bookingController');
 const { protect } = require('../middlewares/authMiddleware');
 
-router.use(protect);
-
 router.post('/', createBooking);
-router.post('/duplicate', duplicateBooking);
-router.get('/my', getMyBookings);
-router.get('/:id', getBookingDetails);
-router.patch('/:id/status', updateBookingStatus);
+router.post('/duplicate', protect, duplicateBooking);
+router.get('/my', protect, getMyBookings);
+router.get('/:id', protect, getBookingDetails);
+router.patch('/:id/status', protect, updateBookingStatus);
 
 module.exports = router;

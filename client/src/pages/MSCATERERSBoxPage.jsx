@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Loader2
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import WhatsAppCTA from '../components/common/WhatsAppCTA';
 import MenuPopup from '../components/common/MenuPopup';
 import api from '../api/axios';
@@ -39,6 +40,7 @@ const MSCATERERSBoxPage = () => {
   const [selectedMenuForBooking, setSelectedMenuForBooking] = React.useState(null);
   const [products, setProducts] = React.useState([]);
   const [productsLoading, setProductsLoading] = React.useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMenus();
@@ -191,6 +193,17 @@ const MSCATERERSBoxPage = () => {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const experienceRef = React.useRef(null);
   const videoRef = React.useRef(null);
+
+  const addToBox = (product) => {
+    const productId = product._id || product.id;
+    const params = new URLSearchParams({
+      productId: productId,
+      productType: 'NinjaBox',
+      guests: '10',
+      occasion: 'Party'
+    });
+    navigate(`/checkprice?${params.toString()}`);
+  };
 
   const handleScrollTo = (ref) => {
     ref.current?.scrollIntoView({ behavior: 'smooth' });
@@ -557,7 +570,10 @@ const MSCATERERSBoxPage = () => {
                     <p className="text-gray-500 text-xs line-clamp-2 mb-6 h-8">
                       {product.description || 'Deliciously prepared with authentic ingredients and flavors.'}
                     </p>
-                    <button className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-[#B70C10] transition-colors flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => addToBox(product)}
+                      className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-[#B70C10] transition-colors flex items-center justify-center gap-2"
+                    >
                       <Plus size={16} /> Add to Box
                     </button>
                   </div>

@@ -9,12 +9,12 @@ const bookingSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
   menu: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Menu',
-    required: true
+    required: false
   },
   eventDate: {
     type: Date,
@@ -26,8 +26,11 @@ const bookingSchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: true
+    required: false
   },
+  customerName: String,
+  customerPhone: String,
+  deliveryAddress: String,
   guestCount: {
     type: Number,
     required: true

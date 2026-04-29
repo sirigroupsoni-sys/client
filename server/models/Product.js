@@ -14,6 +14,11 @@ const productSchema = new mongoose.Schema({
     enum: ['BulkFood', 'FoodService', 'LiveServices', 'MealBox', 'SnackBox'],
     default: 'BulkFood'
   },
+  dishType: {
+    type: String,
+    enum: ['Starters', 'Mains', 'Rice & Breads', 'Desserts', 'Beverages', 'Other'],
+    default: 'Other'
+  },
   description: {
     type: String
   },
@@ -23,6 +28,15 @@ const productSchema = new mongoose.Schema({
   isVeg: {
     type: Boolean,
     default: true
+  },
+  unit: {
+    type: String,
+    enum: ['pcs', 'kg', 'ltr', 'plate'],
+    default: 'pcs'
+  },
+  ratio: {
+    type: Number,
+    default: 1 // Quantity per guest
   },
   isAvailable: {
     type: Boolean,

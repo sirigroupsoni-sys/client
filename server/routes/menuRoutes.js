@@ -8,12 +8,14 @@ const {
   getMenuDishes, 
   getAddons, 
   calculatePrice,
-  getProducts
+  getProducts,
+  getProductById
 } = require('../controllers/menuController');
 
 router.get('/categories', getCategories);
 router.get('/all', getAllMenus);
 router.get('/products', getProducts);
+router.get('/products/:productId', getProductById);
 router.get('/category/:categoryId', getMenusByCategory);
 router.get('/category-name/:categoryName', getMenusByCategoryName);
 router.get('/:menuId/dishes', getMenuDishes);

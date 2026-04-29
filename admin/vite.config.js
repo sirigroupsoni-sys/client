@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: '/mscaterers/admin/',
+  base: '/mscaterers/admin',
   server: {
     port: 3001,
     proxy: {

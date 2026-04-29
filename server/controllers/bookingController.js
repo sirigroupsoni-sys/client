@@ -4,10 +4,10 @@ exports.createBooking = async (req, res) => {
   try {
     const { 
       menuId, eventDate, eventTime, location, guests, 
-      totalPrice, breakdown 
+      totalPrice, breakdown, customerName, customerPhone, deliveryAddress
     } = req.body;
     
-    const userId = req.user.id;
+    const userId = req.user ? req.user.id : null;
     const bookingId = `BK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const newBooking = await Booking.create({
@@ -16,12 +16,15 @@ exports.createBooking = async (req, res) => {
       menu: menuId,
       eventDate,
       eventTime,
-      location: location || 'Not Specified',
+      location: location || deliveryAddress || 'Not Specified',
+      customerName,
+      customerPhone,
+      deliveryAddress,
       guestCount: guests,
       pricingBreakdown: {
-        subtotal: breakdown.basePrice,
-        tax: breakdown.gst,
-        total: breakdown.total
+        subtotal: breakdown?.basePrice || totalPrice,
+        tax: breakdown?.gst || 0,
+        total: breakdown?.total || totalPrice
       },
       status: 'Pending'
     });

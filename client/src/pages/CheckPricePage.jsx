@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Plus, ChevronDown, Search, Trash2, Calendar, Clock, MapPin, PartyPopper, CalendarCheck, Utensils, Receipt, CreditCard, Lightbulb, MessageCircle, X, Bookmark } from 'lucide-react';
+import { ArrowRight, Plus, ChevronDown, Search, Trash2, Calendar, Clock, MapPin, PartyPopper, CalendarCheck, Utensils, Receipt, CreditCard, Lightbulb, MessageCircle, X, Bookmark, CheckCircle2, User } from 'lucide-react';
+import api from '../api/axios';
 
 const CheckPricePage = () => {
   const [formData, setFormData] = useState({
@@ -9,7 +10,10 @@ const CheckPricePage = () => {
     date: '',
     time: '',
     vegGuests: '10',
-    nonVegGuests: '0'
+    nonVegGuests: '0',
+    name: '',
+    phone: '',
+    address: ''
   });
 
   const [step, setStep] = useState(1);
@@ -33,32 +37,185 @@ const CheckPricePage = () => {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [servicePreference, setServicePreference] = useState('NinjaBox');
+  const [loading, setLoading] = useState(true);
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
+  const handlePlaceOrder = async () => {
+    try {
+      setLoading(true);
+      const guests = parseInt(formData.vegGuests) + parseInt(formData.nonVegGuests);
+      const { data } = await api.post('/bookings', {
+        eventDate: formData.date,
+        eventTime: formData.time,
+        occasion: formData.occasion,
+        guests: guests,
+        city: formData.city,
+        customerName: formData.name,
+        customerPhone: formData.phone,
+        deliveryAddress: formData.address,
+        serviceType: servicePreference,
+        selectedDishes: selectedDishes.map(d => ({
+          productId: d.id,
+          name: d.name,
+          qty: d.qty,
+          unit: d.unit
+        })),
+        totalPrice: calculateTotal() + (servicePreference === 'NinjaBuffet' ? 4000 : 0)
+      });
+      
+      if (data.success) {
+        setOrderSuccess(true);
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProductById = async (productId, guestsCount) => {
+    try {
+      setLoading(true);
+      const { data } = await api.get(`/menus/products/${productId}`);
+      if (data.success) {
+        const p = data.product;
+        const guests = parseInt(guestsCount) || 10;
+        const ratio = p.ratio || (p.unit === 'pcs' ? 2.5 : 0.15);
+        let qty = guests * ratio;
+        if (p.unit === 'pcs') qty = Math.ceil(qty);
+        else qty = parseFloat(qty.toFixed(1));
+
+        setSelectedDishes([{
+          id: p._id,
+          name: p.name,
+          img: p.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200',
+          type: p.isVeg ? 'veg' : 'non-veg',
+          unit: p.unit || 'pcs',
+          ratio: ratio,
+          qty: qty || 1,
+          price: p.price || 150
+        }]);
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMenuDishes = async (menuId, guestsCount) => {
+    try {
+      setLoading(true);
+      const { data } = await api.get(`/menus/${menuId}/dishes`);
+      if (data.success) {
+        const guests = parseInt(guestsCount) || 10;
+        const dishes = data.dishes.map(d => {
+          const ratio = d.ratio || (d.course?.toLowerCase() === 'starter' ? 2.5 : 0.15);
+          let qty = guests * ratio;
+          if (d.unit === 'pcs' || d.course?.toLowerCase() === 'starter' || d.course?.toLowerCase() === 'bread') {
+            qty = Math.ceil(qty);
+          } else {
+            qty = parseFloat(qty.toFixed(1));
+          }
+          return {
+            id: d._id,
+            name: d.name,
+            img: d.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200',
+            type: d.isVeg ? 'veg' : 'non-veg',
+            unit: d.unit || (d.course?.toLowerCase() === 'starter' ? 'pcs' : 'kg'),
+            ratio: ratio,
+            qty: qty || 1,
+            price: d.price || 150
+          };
+        });
+        setSelectedDishes(dishes);
+      }
+    } catch (error) {
+      console.error('Error fetching menu dishes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get('/menus/products');
+      if (data.success) {
+        const grouped = data.products.reduce((acc, p) => {
+          const cat = p.dishType || 'Other';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push({
+            id: p._id,
+            name: p.name,
+            img: p.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200',
+            type: p.isVeg ? 'veg' : 'non-veg',
+            unit: p.unit || 'pcs',
+            ratio: p.ratio || 1,
+            price: p.price
+          });
+          return acc;
+        }, {});
+        
+        if (Object.keys(grouped).length > 0) {
+          setAvailableDishes(grouped);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const guests = parseInt(formData.vegGuests) + parseInt(formData.nonVegGuests);
+    if (selectedDishes.length > 0) {
+      const updated = selectedDishes.map(d => {
+        if (d.isManual) return d;
+        const ratio = d.ratio || (d.unit === 'pcs' ? 2.5 : 0.15);
+        let newQty = guests * ratio;
+        if (d.unit === 'pcs') newQty = Math.ceil(newQty);
+        else newQty = parseFloat(newQty.toFixed(1));
+        return { ...d, qty: newQty || 1 };
+      });
+      if (JSON.stringify(updated) !== JSON.stringify(selectedDishes)) {
+        setSelectedDishes(updated);
+      }
+    }
+  }, [formData.vegGuests, formData.nonVegGuests, availableDishes]);
+
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    // Parse URL params if coming from a package selection
+    const menuId = searchParams.get('menuId');
+    const productId = searchParams.get('productId');
     const menuParam = searchParams.get('menuType');
     const productParam = searchParams.get('productType');
     
-    if (menuParam || productParam) {
+    if (menuId || productId || menuParam || productParam) {
+      const guests = searchParams.get('guests') || '10';
       setFormData(prev => ({
         ...prev,
         occasion: searchParams.get('occasion') || '',
         date: searchParams.get('date') || '',
         time: searchParams.get('time') || '',
-        vegGuests: searchParams.get('guests') || '10'
+        vegGuests: guests
       }));
-      // Mock pre-selected dishes for package
-      const initialDishes = [
-        { ...availableDishes['Starters'][0], qty: 20, unit: 'pcs' },
-        { ...availableDishes['Mains'][0], qty: 1.5, unit: 'kg' }
-      ];
-      setSelectedDishes(initialDishes);
-      setStep(3); // Jump to Summary
+      
+      if (menuId) {
+        fetchMenuDishes(menuId, guests);
+      } else if (productId) {
+        fetchProductById(productId, guests);
+      }
+      setStep(3);
     }
   }, [location]);
 
@@ -77,13 +234,15 @@ const CheckPricePage = () => {
 
   const updateQty = (id, delta) => {
     setSelectedDishes(prev => prev.map(d =>
-      d.id === id ? { ...d, qty: Math.max(0.1, d.qty + delta) } : d
+      d.id === id ? { ...d, qty: Math.max(0.1, d.qty + delta), isManual: true } : d
     ));
   };
 
   const calculateTotal = () => {
-    const guests = parseInt(formData.vegGuests) + parseInt(formData.nonVegGuests);
-    return selectedDishes.length * 150 * guests;
+    return selectedDishes.reduce((total, dish) => {
+      const price = dish.price || 150;
+      return total + (price * (dish.qty || 0));
+    }, 0);
   };
 
   const cities = ["Bangalore", "Gurgaon", "Delhi", "Noida", "Mumbai", "Thane", "Navi-Mumbai", "Ghaziabad", "Pune", "Chennai", "Hyderabad", "Chandigarh"];
@@ -93,7 +252,6 @@ const CheckPricePage = () => {
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
       <main className="max-w-md mx-auto pb-24">
-        {/* Sticky Stepper */}
         <div className="bg-white py-4 border-b border-gray-100 sticky top-0 z-50 shadow-sm">
           <div className="flex items-center justify-between px-6">
             {[
@@ -122,10 +280,7 @@ const CheckPricePage = () => {
         <div className="mt-6 px-4">
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-2">
-                 Event Details
-              </h2>
-
+              <h2 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-2">Event Details</h2>
               <div className="bg-[#FEF5F5] p-6 rounded-2xl flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 bg-[#B70C10] rounded-full flex items-center justify-center text-white flex-shrink-0 shadow-md">
                    <PartyPopper size={24} />
@@ -135,7 +290,6 @@ const CheckPricePage = () => {
                   <p className="text-gray-500 text-xs mt-1">Fill details to get exact price & availability</p>
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select City</label>
@@ -147,7 +301,6 @@ const CheckPricePage = () => {
                     </select>
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Occasion</label>
                   <div className="bg-[#FAFAFA] border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3">
@@ -158,7 +311,6 @@ const CheckPricePage = () => {
                     </select>
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Date</label>
                   <div className="bg-[#FAFAFA] border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3">
@@ -166,7 +318,6 @@ const CheckPricePage = () => {
                     <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full bg-transparent font-bold text-sm text-gray-700 outline-none" />
                   </div>
                 </div>
-
                 <div className="col-span-2 space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Delivery Time</label>
                   <div className="bg-[#FAFAFA] border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3">
@@ -177,7 +328,6 @@ const CheckPricePage = () => {
                     </select>
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Veg Guest</label>
                   <div className="bg-[#FAFAFA] border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3">
@@ -187,7 +337,6 @@ const CheckPricePage = () => {
                     </select>
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Non-Veg</label>
                   <div className="bg-[#FAFAFA] border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3">
@@ -198,12 +347,11 @@ const CheckPricePage = () => {
                   </div>
                 </div>
               </div>
-
               <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 max-w-md mx-auto">
                 <button 
                   onClick={() => setStep(2)}
                   disabled={!formData.city || !formData.date}
-                  className="w-full bg-[#B70C10] text-white py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="w-full bg-[#B70C10] text-white py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 shadow-xl transition-all disabled:opacity-50"
                 >
                   Create Menu <ArrowRight size={20} />
                 </button>
@@ -217,7 +365,6 @@ const CheckPricePage = () => {
                  <h2 className="text-2xl font-black text-gray-800">Select Menu</h2>
                  <div className="bg-red-50 px-3 py-1 rounded-full text-[10px] font-black text-[#B70C10] uppercase">{selectedDishes.length} Items</div>
                </div>
-
                <div className="space-y-4">
                  {Object.entries(availableDishes).map(([cat, items]) => (
                    <div key={cat} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
@@ -237,11 +384,8 @@ const CheckPricePage = () => {
                                  <span className="text-sm font-bold text-gray-800 leading-tight">{item.name}</span>
                                </div>
                              </div>
-                             <button 
-                               onClick={() => toggleDish(item)}
-                               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-[#B70C10] text-white' : 'bg-gray-100 text-gray-400'}`}
-                             >
-                               {isSelected ? '✓' : <Plus size={16} />}
+                             <button onClick={() => toggleDish(item)} className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-[#B70C10] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                               {isSelected ? 'Check' : <Plus size={16} />}
                              </button>
                            </div>
                          );
@@ -250,24 +394,11 @@ const CheckPricePage = () => {
                    </div>
                  ))}
                </div>
-
                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-4 max-w-md mx-auto">
                  <button onClick={() => setStep(1)} className="w-14 h-14 border border-gray-200 rounded-xl flex items-center justify-center text-gray-400">
                     <ArrowRight className="rotate-180" />
                  </button>
-                 <button 
-                  onClick={() => {
-                    const guests = parseInt(formData.vegGuests) + parseInt(formData.nonVegGuests);
-                    const updated = selectedDishes.map(d => ({
-                      ...d,
-                      qty: d.qty || Math.ceil(guests * d.ratio),
-                      unit: d.unit || 'pcs'
-                    }));
-                    setSelectedDishes(updated);
-                    setStep(3);
-                  }}
-                  className="flex-1 bg-[#B70C10] text-white rounded-xl font-black text-lg flex items-center justify-center gap-2"
-                 >
+                 <button onClick={() => setStep(3)} className="flex-1 bg-[#B70C10] text-white rounded-xl font-black text-lg flex items-center justify-center gap-2">
                    Customize Quantity <ArrowRight size={20} />
                  </button>
                </div>
@@ -277,23 +408,18 @@ const CheckPricePage = () => {
           {step === 3 && (
             <div className="animate-in slide-in-from-right duration-300">
                <h2 className="text-2xl font-black text-[#B70C10] mb-6">Menu Summary</h2>
-               
                <div className="bg-[#FFF5F5] p-5 rounded-2xl flex gap-4 mb-8 border border-red-50">
                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-sm text-yellow-500">
                    <Lightbulb size={24} />
                  </div>
                  <p className="text-xs text-gray-600 leading-relaxed">
-                   Quantities are <span className="font-bold text-gray-800">auto-calculated</span> based on your guest count. You can adjust them manually if needed.
+                   Quantities are <span className="font-bold text-gray-800">auto-calculated</span> based on your guest count.
                  </p>
                </div>
-
                <div className="space-y-6">
                   {selectedDishes.map((dish) => (
                     <div key={dish.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm relative">
-                      <button 
-                        onClick={() => setSelectedDishes(selectedDishes.filter(d => d.id !== dish.id))}
-                        className="absolute top-4 right-4 text-gray-300 hover:text-red-500"
-                      >
+                      <button onClick={() => setSelectedDishes(selectedDishes.filter(d => d.id !== dish.id))} className="absolute top-4 right-4 text-gray-300 hover:text-red-500">
                         <Trash2 size={18} />
                       </button>
                       <div className="flex gap-4">
@@ -304,24 +430,20 @@ const CheckPricePage = () => {
                              <span className="font-bold text-gray-800 text-sm">{dish.name}</span>
                           </div>
                           <div className="flex items-center bg-red-50 rounded-lg p-1 w-fit gap-4">
-                            <button onClick={() => updateQty(dish.id, dish.unit === 'pcs' ? -1 : -0.1)} className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#B70C10] shadow-sm font-black">－</button>
+                            <button onClick={() => updateQty(dish.id, dish.unit === 'pcs' ? -1 : -0.1)} className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#B70C10] shadow-sm font-black">-</button>
                             <span className="text-xs font-black text-gray-800">{dish.qty.toFixed(dish.unit === 'kg' ? 1 : 0)} {dish.unit}</span>
-                            <button onClick={() => updateQty(dish.id, dish.unit === 'pcs' ? 1 : 0.1)} className="w-8 h-8 rounded-lg bg-[#B70C10] flex items-center justify-center text-white shadow-md font-black">＋</button>
+                            <button onClick={() => updateQty(dish.id, dish.unit === 'pcs' ? 1 : 0.1)} className="w-8 h-8 rounded-lg bg-[#B70C10] flex items-center justify-center text-white shadow-md font-black">+</button>
                           </div>
                         </div>
                       </div>
                     </div>
                   ))}
                </div>
-
                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-4 max-w-md mx-auto">
                  <button onClick={() => setStep(2)} className="w-14 h-14 border border-gray-200 rounded-xl flex items-center justify-center text-gray-400">
                     <ArrowRight className="rotate-180" />
                  </button>
-                 <button 
-                  onClick={() => setStep(4)}
-                  className="flex-1 bg-[#B70C10] text-white rounded-xl font-black text-lg flex items-center justify-center gap-2"
-                 >
+                 <button onClick={() => setStep(4)} className="flex-1 bg-[#B70C10] text-white rounded-xl font-black text-lg flex items-center justify-center gap-2">
                    Check Price <ArrowRight size={20} />
                  </button>
                </div>
@@ -330,112 +452,103 @@ const CheckPricePage = () => {
 
           {step === 4 && (
             <div className="animate-in fade-in duration-300 py-10 text-center">
-               <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500">
-                 <MessageCircle size={40} />
-               </div>
-               <h3 className="text-2xl font-black text-gray-800 mb-2">Verify WhatsApp</h3>
-               <p className="text-sm text-gray-500 mb-8 px-10">Enter your WhatsApp number to receive the final quote instantly.</p>
-               
-               {!isOtpSent ? (
-                 <div className="space-y-4 px-6">
-                    <input type="tel" placeholder="Enter WhatsApp Number" className="w-full bg-[#FAFAFA] border border-gray-200 rounded-xl px-5 py-4 font-bold outline-none focus:border-[#B70C10]" />
-                    <button onClick={() => setIsOtpSent(true)} className="w-full bg-[#B70C10] text-white py-4 rounded-xl font-black text-lg shadow-lg">Send OTP</button>
-                 </div>
-               ) : !isVerified ? (
-                 <div className="space-y-4 px-6">
-                    <input type="text" maxLength={4} placeholder="0 0 0 0" className="w-full bg-[#FAFAFA] border border-gray-200 rounded-xl px-5 py-4 font-black text-2xl text-center tracking-[1em] outline-none" />
-                    <button onClick={() => setIsVerified(true)} className="w-full bg-[#B70C10] text-white py-4 rounded-xl font-black text-lg shadow-lg">Verify & Show Price</button>
-                    <button onClick={() => setIsOtpSent(false)} className="text-[10px] font-bold text-gray-400 uppercase">Change Number</button>
-                 </div>
+               {!isVerified ? (
+                 <>
+                   <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-[#B70C10]">
+                     <User size={40} />
+                   </div>
+                   <h3 className="text-2xl font-black text-gray-800 mb-2">Order Details</h3>
+                   <p className="text-sm text-gray-500 mb-8 px-10">Please provide your details to see the final quote.</p>
+                   
+                   <div className="space-y-4 px-6 text-left">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
+                        <input 
+                          type="text" 
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          placeholder="Enter your name" 
+                          className="w-full bg-[#FAFAFA] border border-gray-200 rounded-xl px-5 py-4 font-bold outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp Number</label>
+                        <input 
+                          type="tel" 
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          placeholder="Enter phone number" 
+                          className="w-full bg-[#FAFAFA] border border-gray-200 rounded-xl px-5 py-4 font-bold outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Delivery Address</label>
+                        <textarea 
+                          name="address"
+                          value={formData.address}
+                          onChange={handleInputChange}
+                          placeholder="Enter full address" 
+                          className="w-full bg-[#FAFAFA] border border-gray-200 rounded-xl px-5 py-4 font-bold outline-none h-24 resize-none" 
+                        />
+                      </div>
+                      <button 
+                        onClick={() => {
+                          if(!formData.name || !formData.phone || !formData.address) {
+                            alert("Please fill all details!");
+                            return;
+                          }
+                          setIsVerified(true);
+                        }} 
+                        className="w-full bg-[#B70C10] text-white py-4 rounded-xl font-black text-lg shadow-lg mt-4"
+                      >
+                        Show Price Summary
+                      </button>
+                      <button onClick={() => setStep(3)} className="w-full py-2 text-[10px] font-bold text-gray-400 uppercase">Back to Summary</button>
+                   </div>
+                 </>
                ) : (
                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    {/* Dark Red Gradient Backdrop */}
                     <div className="absolute inset-0 bg-gradient-to-br from-[#800000] to-[#3a0000] opacity-95"></div>
-                    
-                    {/* Modal Content */}
                     <div className="relative bg-[#FAFAFA] rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-                       {/* Close Button */}
-                       <button onClick={() => setIsVerified(false)} className="absolute -top-3 -right-3 w-8 h-8 bg-white text-gray-500 rounded-full flex items-center justify-center shadow-md hover:text-red-500 z-10 border border-gray-100">
-                          <X size={16} strokeWidth={3} />
+                       <button onClick={() => setIsVerified(false)} className="absolute -top-3 -right-3 w-8 h-8 bg-white text-gray-500 rounded-full flex items-center justify-center shadow-md z-10">
+                          <X size={16} />
                        </button>
-
-                       <div className="p-5">
-                          <h3 className="text-[15px] font-black text-gray-800 mb-3 text-left">Service Preference?</h3>
-                          
-                          <div className="flex gap-2 mb-6">
-                             {/* NinjaBox Option */}
-                             <div 
-                               onClick={() => setServicePreference('NinjaBox')}
-                               className={`flex-1 rounded-xl p-2 cursor-pointer transition-all border-2 relative overflow-hidden bg-white ${servicePreference === 'NinjaBox' ? 'border-[#B70C10] shadow-md' : 'border-gray-200 opacity-60'}`}
-                             >
-                                <div className="text-left mb-1">
-                                   <p className="font-black text-[13px] leading-none">Ninja<span className="text-[#B70C10]">Box</span></p>
-                                   <p className="text-[9px] font-bold text-gray-500 mt-0.5">Delivery Only</p>
-                                </div>
-                                <img src="https://caterninja.com/frontend/web/images/ninjabox/1.png" className="w-full h-12 object-contain" alt="box" />
-                                <div className="absolute bottom-1 left-0 right-0 flex justify-center">
-                                   <div className={`w-2 h-2 rounded-full ${servicePreference === 'NinjaBox' ? 'bg-[#B70C10]' : 'bg-gray-300'}`}></div>
-                                </div>
-                             </div>
-
-                             {/* NinjaBuffet Option */}
-                             <div 
-                               onClick={() => setServicePreference('NinjaBuffet')}
-                               className={`flex-1 rounded-xl p-2 cursor-pointer transition-all border-2 relative overflow-hidden bg-white ${servicePreference === 'NinjaBuffet' ? 'border-[#B70C10] shadow-md' : 'border-gray-200 opacity-60'}`}
-                             >
-                                <div className="text-left mb-1">
-                                   <p className="font-black text-[13px] leading-none">Ninja<span className="text-[#B70C10]">Buffet</span></p>
-                                   <p className="text-[9px] font-bold text-gray-500 mt-0.5 leading-tight">(Buffet Setup + 1 Servers)</p>
-                                   <p className="text-[10px] font-black text-[#B70C10] mt-0.5">Rs 4,000</p>
-                                </div>
-                                <img src="https://caterninja.com/NEWUI/images/buffet.png" className="w-full h-10 object-cover rounded-md" alt="buffet" />
-                                <div className="absolute bottom-1 left-0 right-0 flex justify-center">
-                                   <div className={`w-2 h-2 rounded-full ${servicePreference === 'NinjaBuffet' ? 'bg-[#B70C10]' : 'bg-gray-300'}`}></div>
-                                </div>
-                             </div>
-                          </div>
-
-                          {/* Price Breakdown */}
-                          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-2 mb-4">
-                             <div className="flex justify-between text-xs font-bold text-gray-600">
-                                <span>Food Cost</span>
-                                <span>₹{calculateTotal().toLocaleString()}</span>
-                             </div>
-                             {servicePreference === 'NinjaBuffet' && (
-                               <div className="flex justify-between text-xs font-bold text-gray-600">
-                                  <span>Buffet Setup (1 Servers)</span>
-                                  <span>₹4,000</span>
-                               </div>
-                             )}
-                             <div className="border-t border-dashed border-gray-200 my-2"></div>
-                             <div className="flex justify-between text-xs font-black text-[#B70C10]">
-                                <span>Sub Total</span>
-                                <span>₹{(calculateTotal() + (servicePreference === 'NinjaBuffet' ? 4000 : 0)).toLocaleString()}</span>
-                             </div>
-                             <div className="flex justify-between text-xs font-bold text-gray-600">
-                                <span>GST (5%)</span>
-                                <span>₹{Math.round((calculateTotal() + (servicePreference === 'NinjaBuffet' ? 4000 : 0)) * 0.05).toLocaleString()}</span>
-                             </div>
-                             <div className="border-t border-gray-200 my-2 pt-2 flex justify-between items-center">
-                                <span className="text-base font-black text-gray-800">Grand Total</span>
-                                <span className="text-xl font-black text-gray-900">₹{Math.round((calculateTotal() + (servicePreference === 'NinjaBuffet' ? 4000 : 0)) * 1.05).toLocaleString()}</span>
-                             </div>
-                             <p className="text-[9px] text-gray-400 font-bold mt-1 text-left">* Delivery charges as per actual</p>
-                          </div>
-
-                          {/* Action Buttons */}
-                          <button className="w-full bg-[#B70C10] text-white py-3.5 rounded-lg font-black shadow-md hover:bg-red-800 transition-colors mb-4 text-sm">
-                             Place My Order
-                          </button>
-
-                          <div className="flex gap-3">
-                             <button className="flex-1 bg-green-50 text-green-700 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-1 hover:bg-green-100">
-                                <MessageCircle size={14} className="fill-current" /> Booking Help
-                             </button>
-                             <button className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-1 hover:bg-gray-200">
-                                <Bookmark size={14} /> Save Quotation
-                             </button>
-                          </div>
+                       <div className="p-5 text-left">
+                          {orderSuccess ? (
+                            <div className="text-center py-10 animate-in zoom-in duration-500">
+                              <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500">
+                                <CheckCircle2 size={50} />
+                              </div>
+                              <h3 className="text-2xl font-black text-gray-800 mb-2">Order Confirmed!</h3>
+                              <p className="text-sm text-gray-500 mb-8">Our team will contact you shortly.</p>
+                              <button onClick={() => window.location.href = '/'} className="w-full bg-gray-900 text-white py-4 rounded-xl font-black text-lg">Back to Home</button>
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="text-[15px] font-black text-gray-800 mb-3">Service Preference?</h3>
+                              <div className="flex gap-2 mb-6">
+                                 <div onClick={() => setServicePreference('NinjaBox')} className={`flex-1 rounded-xl p-2 border-2 ${servicePreference === 'NinjaBox' ? 'border-[#B70C10]' : 'border-gray-200 opacity-60'}`}>
+                                    <p className="font-black text-[13px]">NinjaBox</p>
+                                    <img src="https://caterninja.com/frontend/web/images/ninjabox/1.png" className="w-full h-12 object-contain" alt="box" />
+                                 </div>
+                                 <div onClick={() => setServicePreference('NinjaBuffet')} className={`flex-1 rounded-xl p-2 border-2 ${servicePreference === 'NinjaBuffet' ? 'border-[#B70C10]' : 'border-gray-200 opacity-60'}`}>
+                                    <p className="font-black text-[13px]">NinjaBuffet</p>
+                                    <img src="https://caterninja.com/NEWUI/images/buffet.png" className="w-full h-10 object-cover" alt="buffet" />
+                                 </div>
+                              </div>
+                              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-2 mb-4 text-xs">
+                                 <div className="flex justify-between font-bold text-gray-600"><span>Food Cost</span><span>Rs. {calculateTotal().toLocaleString()}</span></div>
+                                 {servicePreference === 'NinjaBuffet' && <div className="flex justify-between font-bold text-gray-600"><span>Buffet Setup</span><span>Rs. 4,000</span></div>}
+                                 <div className="border-t border-dashed my-2"></div>
+                                 <div className="flex justify-between font-black text-gray-900 text-sm"><span>Grand Total</span><span>Rs. {Math.round((calculateTotal() + (servicePreference === 'NinjaBuffet' ? 4000 : 0) + 500) * 1.05).toLocaleString()}</span></div>
+                              </div>
+                              <button onClick={handlePlaceOrder} disabled={loading} className="w-full bg-[#B70C10] text-white py-3.5 rounded-lg font-black shadow-md hover:bg-red-800 transition-all mb-4 text-sm disabled:opacity-50">
+                                 {loading ? 'Processing...' : 'Place My Order'}
+                              </button>
+                            </>
+                          )}
                        </div>
                     </div>
                  </div>
