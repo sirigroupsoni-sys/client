@@ -4,6 +4,7 @@ import { X, Plus, Utensils, Zap, ArrowLeft, ArrowRight, Calendar, Clock, Cake, A
 import axios from 'axios';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import LoginModal from '../auth/LoginModal';
 
 const MenuPopup = ({ isOpen, onClose, menuData, initialEventDetails }) => {
   const navigate = useNavigate();
@@ -43,6 +44,22 @@ const MenuPopup = ({ isOpen, onClose, menuData, initialEventDetails }) => {
   const [otp, setOtp] = useState('');
   const [serviceType, setServiceType] = useState('MS Caterers Buffet');
   const [confirmedBookingId, setConfirmedBookingId] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setEventDetails(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        phone: user.phone || prev.phone,
+        address: user.address || prev.address
+      }));
+      if (showLoginModal) {
+        setShowLoginModal(false);
+        setIsVerified(true);
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     if (initialEventDetails) {
@@ -560,7 +577,11 @@ const MenuPopup = ({ isOpen, onClose, menuData, initialEventDetails }) => {
                       alert("Please fill all details!");
                       return;
                     }
-                    setIsVerified(true);
+                    if (!user) {
+                      setShowLoginModal(true);
+                    } else {
+                      setIsVerified(true);
+                    }
                   }} 
                   className="w-full bg-[#B70C10] text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-red-600/20 hover:bg-red-800 transition-all mt-4"
                 >
@@ -691,6 +712,7 @@ const MenuPopup = ({ isOpen, onClose, menuData, initialEventDetails }) => {
           </div>
         )}
       </div>
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
     </div>
   );
 };

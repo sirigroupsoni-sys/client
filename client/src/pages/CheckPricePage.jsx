@@ -3,6 +3,8 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Plus, ChevronDown, Search, Trash2, Calendar, Clock, MapPin, PartyPopper, CalendarCheck, Utensils, Receipt, CreditCard, Lightbulb, MessageCircle, X, Bookmark, CheckCircle2, User, Cake, ShieldCheck, Loader2, Package } from 'lucide-react';
 import api from '../api/axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import LoginModal from '../components/auth/LoginModal';
 
 const CheckPricePage = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +20,23 @@ const CheckPricePage = () => {
   });
 
   const [step, setStep] = useState(1);
+  const { user } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        phone: user.phone || prev.phone,
+        address: user.address || prev.address
+      }));
+      if (showLoginModal) {
+        setShowLoginModal(false);
+        setShowFinalModal(true);
+      }
+    }
+  }, [user]);
   const [availableDishes, setAvailableDishes] = useState({
     'Starters': [
       { id: 1, name: 'Tandoori Paneer Tikka', img: 'https://images.unsplash.com/photo-1599487488170-d11ec9c175f0?w=200', type: 'veg', unit: 'pcs', ratio: 2 },
@@ -725,7 +744,7 @@ const CheckPricePage = () => {
 
                 <div className="pt-6">
                   <button
-                    onClick={() => setShowFinalModal(true)}
+                    onClick={() => user ? setShowFinalModal(true) : setShowLoginModal(true)}
                     disabled={loading || !formData.name || !formData.phone || !formData.address}
                     className="w-full bg-[#B70C10] text-white py-5 rounded-[22px] font-black text-xl flex items-center justify-center gap-3 shadow-2xl shadow-red-600/30 active:scale-[0.98] transition-all disabled:opacity-50"
                   >
@@ -880,6 +899,7 @@ const CheckPricePage = () => {
           </div>
         )}
       </AnimatePresence>
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
     </div>
   );
 };
