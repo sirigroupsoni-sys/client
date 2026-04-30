@@ -29,14 +29,14 @@ const Products = () => {
   const [form, setForm] = useState({ 
     name: '', 
     price: '', 
-    category: 'BulkFood', 
+    category: 'Delivery Only', 
     description: '', 
     image: '',
     isVeg: true,
     isAvailable: true
   });
 
-  const categories = ['All', 'BulkFood', 'FoodService', 'LiveServices', 'MealBox', 'SnackBox'];
+  const categories = ['All', 'Delivery Only', 'Delivery + Services', 'Live Service', 'Snack Box', 'Meal Box'];
 
   useEffect(() => {
     fetchProducts();
@@ -98,7 +98,7 @@ const Products = () => {
         <button 
           onClick={() => { 
             setEditingProduct(null); 
-            setForm({ name: '', price: '', category: 'BulkFood', description: '', image: '', isVeg: true, isAvailable: true }); 
+            setForm({ name: '', price: '', category: 'Delivery Only', description: '', image: '', isVeg: true, isAvailable: true }); 
             setShowModal(true); 
           }}
           className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-all flex items-center gap-3"

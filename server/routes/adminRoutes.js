@@ -15,7 +15,8 @@ const {
   getAllProducts,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  updateCategory
 } = require('../controllers/adminController');
 const { protect, restrictTo } = require('../middlewares/authMiddleware');
 
@@ -29,7 +30,7 @@ router.post('/menus', createMenu);
 router.patch('/menus/:id', updateMenu);
 router.delete('/menus/:id', deleteMenu);
 router.post('/dishes', addDish);
-router.patch('/dishes/:id', updateDish);
+router.patch('/dishes', updateDish);
 router.delete('/menus/:menuId/dishes/:dishId', deleteDish);
 router.get('/bookings', getAllBookings);
 router.patch('/bookings/:id/assign-manager', assignManager);
@@ -39,5 +40,6 @@ router.get('/products', getAllProducts);
 router.post('/products', createProduct);
 router.patch('/products/:id', updateProduct);
 router.delete('/products/:id', deleteProduct);
+router.patch('/categories/:id', updateCategory);
 
 module.exports = router;

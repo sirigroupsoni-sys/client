@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 
-const ServiceTypes = ({ activeService }) => {
+const ServiceTypes = ({ activeService, setActiveService }) => {
   const serviceTypes = [
-    { id: 'MSCATERERSBox', name: 'Delivery Only', image: 'https://caterninja.com/_next/image?url=https%3A%2F%2Fd3t167u6bqq6i3.cloudfront.net%2Ffrontend%2FNEWUI%2Fcategory%2Fdelivery-only.webp&w=1920&q=75' },
-    { id: 'DeliveryServices', name: 'Delivery + Services', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/2.png' },
-    { id: 'LiveServices', name: 'Live Service', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/3.png' },
-    { id: 'SnackBox', name: 'Snack Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/4.png' },
-    { id: 'MealBox', name: 'Meal Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/5.png' }
+    { id: 'Delivery Only', name: 'Delivery Only', image: 'https://caterninja.com/_next/image?url=https%3A%2F%2Fd3t167u6bqq6i3.cloudfront.net%2Ffrontend%2FNEWUI%2Fcategory%2Fdelivery-only.webp&w=1920&q=75' },
+    { id: 'Delivery + Services', name: 'Delivery + Services', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/2.png' },
+    { id: 'Live Service', name: 'Live Service', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/3.png' },
+    { id: 'Snack Box', name: 'Snack Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/4.png' },
+    { id: 'Meal Box', name: 'Meal Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/5.png' }
   ];
   const scrollRef = useRef(null);
 
@@ -38,6 +38,13 @@ const ServiceTypes = ({ activeService }) => {
         {serviceTypes.map((type, index) => (
           <div
             key={index}
+            onClick={() => {
+              if (typeof setActiveService === 'function') {
+                setActiveService(type.id);
+              } else {
+                console.warn('setActiveService is not a function in ServiceTypes');
+              }
+            }}
             className="flex flex-col items-center shrink-0 snap-center cursor-pointer group"
           >
             {/* The Circle Wrapper */}
@@ -45,13 +52,13 @@ const ServiceTypes = ({ activeService }) => {
             <div className={`rounded-full flex items-center justify-center transition-transform group-hover:scale-105 duration-300 mb-2 ${type.id === activeService ? 'p-[3px] border-[1.5px] border-[#ba1419]' : 'p-[3px] border-[1.5px] border-transparent'}`}>
 
               <div
-                className="w-[110px] h-[110px] md:w-[160px] md:h-[160px] rounded-full overflow-hidden shadow-md relative flex items-center justify-center bg-gradient-to-r from-gray-50 to-[#f5b8b8]"
+                className="w-[120px] h-[120px] md:w-[180px] md:h-[180px] rounded-full overflow-hidden shadow-lg border-[3px] border-white group-hover:scale-105 group-hover:shadow-xl transition-all duration-500 bg-white"
               >
                 {/* Image */}
                 <img
                   src={type.image}
                   alt={type.name}
-                  className="w-full h-full object-cover mix-blend-multiply opacity-95 transition-opacity group-hover:opacity-100 scale-110"
+                  className="w-full h-full object-cover opacity-95 transition-opacity group-hover:opacity-100 scale-110"
                 />
               </div>
 

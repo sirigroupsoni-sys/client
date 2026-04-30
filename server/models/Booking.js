@@ -29,6 +29,7 @@ const bookingSchema = new mongoose.Schema({
     required: false
   },
   customerName: String,
+  customerEmail: String,
   customerPhone: String,
   deliveryAddress: String,
   guestCount: {
@@ -37,6 +38,18 @@ const bookingSchema = new mongoose.Schema({
   },
   addons: [{
     name: String,
+    price: Number
+  }],
+  city: String,
+  selectedDishes: [{
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product'
+    },
+    name: String,
+    image: String,
+    qty: Number,
+    unit: String,
     price: Number
   }],
   pricingBreakdown: {
@@ -61,6 +74,17 @@ const bookingSchema = new mongoose.Schema({
   staff: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  }],
+  statusUpdates: [{
+    status: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    message: String
   }]
 }, {
   timestamps: true

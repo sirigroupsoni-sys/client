@@ -12,13 +12,15 @@ import SafetyBanner from '../components/common/SafetyBanner';
 import WhatsAppCTA from '../components/common/WhatsAppCTA';
 
 const HomePage = () => {
+  const [activeService, setActiveService] = React.useState('Delivery Only');
+
   return (
     <>
       <FoodMarquee />
       <CategoryScroll />
       <ServicesScroll />
-      <ServiceTypes />
-      <PackagesSection />
+      <ServiceTypes activeService={activeService} setActiveService={setActiveService} />
+      <PackagesSection activeService={activeService} />
       <CustomPackageBanner />
       <CateringOfferings />
       <TestimonialsScroll />

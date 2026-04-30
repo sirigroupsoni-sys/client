@@ -203,3 +203,14 @@ exports.deleteProduct = async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 };
+
+exports.updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    const category = await Category.findByIdAndUpdate(id, { name }, { new: true });
+    res.status(200).json({ success: true, category });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};

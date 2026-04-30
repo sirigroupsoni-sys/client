@@ -10,7 +10,8 @@ import {
   Calendar,
   Clock,
   ArrowRight,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import WhatsAppCTA from '../components/common/WhatsAppCTA';
@@ -28,35 +29,47 @@ import food_3 from '../assets/food_3.png';
 import food_4 from '../assets/food_4.png';
 
 const MSCATERERSBoxPage = () => {
+  const navigate = useNavigate();
   const scrollRef = useRef(null);
   const [selectedOption, setSelectedOption] = React.useState('BulkFood');
   const [isVeg, setIsVeg] = React.useState(true);
   const [priceRange, setPriceRange] = React.useState('300-450');
   const [menus, setMenus] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [productsLoading, setProductsLoading] = React.useState(false);
   const [quoteLoading, setQuoteLoading] = React.useState(null);
   const [showQuote, setShowQuote] = React.useState(null);
   const [isBookingOpen, setIsBookingOpen] = React.useState(false);
   const [selectedMenuForBooking, setSelectedMenuForBooking] = React.useState(null);
   const [products, setProducts] = React.useState([]);
-  const [productsLoading, setProductsLoading] = React.useState(true);
-  const navigate = useNavigate();
+  const [activeCategory, setActiveCategory] = React.useState('Delivery Only');
+
+  const resolveImg = (img) => {
+    if (!img) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200';
+    if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('blob:') || img.startsWith('/src/assets/') || typeof img === 'object') return img;
+    const baseUrl = 'https://mscaterers-server.onrender.com';
+    return `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`;
+  };
+
+  useEffect(() => {
+    fetchMenus();
+  }, []);
 
   useEffect(() => {
     fetchMenus();
     fetchProducts();
-  }, []);
+  }, [activeCategory]);
 
   const fetchMenus = async () => {
     try {
       setLoading(true);
-      // Assuming Category 1 is for MSCATERERSBox based on seed data
-      const { data } = await api.get('/menus/category-name/MSCATERERSBox');
+      const { data } = await api.get(`/menus/category-name/${activeCategory}`);
       if (data.success) {
         setMenus(data.menus);
       }
     } catch (error) {
       console.error('Error fetching menus:', error);
+      setMenus([]); // Reset if not found
     } finally {
       setLoading(false);
     }
@@ -65,7 +78,7 @@ const MSCATERERSBoxPage = () => {
   const fetchProducts = async () => {
     try {
       setProductsLoading(true);
-      const { data } = await api.get('/menus/products?category=BulkFood');
+      const { data } = await api.get(`/menus/products?category=${activeCategory}`);
       if (data.success) {
         setProducts(data.products);
       }
@@ -114,10 +127,11 @@ const MSCATERERSBoxPage = () => {
 
   const bannerImages = [banner1, banner2, banner3, banner4, banner5];
 
-  const options = [
-    { id: 'BulkFood', title: 'BulkFood', subtitle: '(Delivery Only)', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/1.png' },
-    { id: 'FoodService', title: 'Food + Service', subtitle: '', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/2.png' },
-    { id: 'LiveServices', title: 'Food + Live Services', subtitle: '', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/3.png' }
+  const categories = [
+    { id: 'Delivery Only', title: 'Delivery Only', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/1.png' },
+    { id: 'LiveService', title: 'Live Service', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/2.png' },
+    { id: 'SnackBox', title: 'Snack Box', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/3.png' },
+    { id: 'MealBox', title: 'Meal Box', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/4.png' }
   ];
 
   const stats = [
@@ -198,7 +212,7 @@ const MSCATERERSBoxPage = () => {
     const productId = product._id || product.id;
     const params = new URLSearchParams({
       productId: productId,
-      productType: 'NinjaBox',
+      productType: 'MS Caterers',
       guests: '10',
       occasion: 'Party'
     });
@@ -362,91 +376,103 @@ const MSCATERERSBoxPage = () => {
             </h3>
 
             <div className="flex flex-wrap justify-center gap-6 md:gap-10">
-              {options.map((option) => (
+              {categories.map((cat) => (
                 <div
-                  key={option.id}
-                  onClick={() => setSelectedOption(option.id)}
-                  className={`relative w-[200px] h-[150px] rounded-[20px] overflow-hidden cursor-pointer transition-all duration-300 border-2 ${selectedOption === option.id ? 'border-[#B70C10] scale-105 shadow-xl' : 'border-transparent opacity-60'}`}
+                  key={cat.id}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    document.getElementById('packages-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex flex-col items-center group cursor-pointer"
                 >
-                  <div className="absolute inset-0">
-                    <img src={option.img} className="w-full h-full object-cover" alt={option.title} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden mb-4 transition-all duration-300 border-4 ${activeCategory === cat.id ? 'border-[#B70C10] scale-110 shadow-xl' : 'border-transparent hover:border-gray-200'}`}>
+                    <img src={cat.img} className="w-full h-full object-cover" alt={cat.title} />
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 p-3 text-white text-center">
-                    <p className="font-black text-sm leading-tight">{option.title}</p>
-                    {option.subtitle && <p className="text-[10px] font-bold opacity-80">{option.subtitle}</p>}
-                  </div>
-                  {/* Radio indicator */}
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedOption === option.id ? 'border-white bg-[#B70C10]' : 'border-white'}`}>
-                      {selectedOption === option.id && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
-                    </div>
-                  </div>
+                  <p className={`font-black text-sm md:text-base tracking-tight transition-colors ${activeCategory === cat.id ? 'text-[#B70C10]' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                    {cat.title}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Toggles & Price Filters */}
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-12">
-            {/* Veg Toggle */}
-            <div className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm">
-              <span className="text-sm font-bold text-gray-600">Veg</span>
-              <button
-                onClick={() => setIsVeg(true)}
-                className={`w-12 h-6 rounded-full relative transition-colors ${isVeg ? 'bg-green-600' : 'bg-gray-300'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isVeg ? 'left-7' : 'left-1'}`}></div>
-              </button>
+          <div className="mt-10 max-w-[1400px] mx-auto px-4 md:px-8">
+            <div className="flex flex-wrap items-center justify-start gap-3 md:gap-4">
+              {/* Veg Toggle */}
+              <div className="flex items-center gap-4 bg-[#f2f4f7] px-5 py-3 rounded-[14px] shadow-sm min-w-[130px]">
+                <span className="text-sm font-bold text-[#475569]">Veg</span>
+                <button
+                  onClick={() => setIsVeg(true)}
+                  className={`w-[44px] h-[24px] rounded-full relative transition-all duration-300 ${isVeg ? 'bg-[#16803c]' : 'bg-[#cbd5e1]'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${isVeg ? 'left-[24px]' : 'left-1'}`}></div>
+                </button>
+              </div>
+
+              {/* Non-Veg Toggle */}
+              <div className="flex items-center gap-4 bg-[#f2f4f7] px-5 py-3 rounded-[14px] shadow-sm min-w-[130px]">
+                <span className="text-sm font-bold text-[#475569]">Non-Veg</span>
+                <button
+                  onClick={() => setIsVeg(false)}
+                  className={`w-[44px] h-[24px] rounded-full relative transition-all duration-300 ${!isVeg ? 'bg-[#16803c]' : 'bg-[#cbd5e1]'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${!isVeg ? 'left-[24px]' : 'left-1'}`}></div>
+                </button>
+              </div>
+
+              {/* Price Filters */}
+              {[
+                { id: 'under-300', label: 'Under ₹300' },
+                { id: '300-450', label: '₹300 - ₹450' },
+                { id: '450+', label: '₹450+' }
+              ].map((range) => (
+                <button
+                  key={range.id}
+                  onClick={() => setPriceRange(range.id)}
+                  className={`px-6 py-3 rounded-[14px] text-sm font-bold transition-all border flex items-center gap-2.5 shadow-sm ${
+                    priceRange === range.id 
+                    ? 'bg-white text-[#0f172a] border-[#e2e8f0] ring-1 ring-[#e2e8f0]' 
+                    : 'bg-[#f2f4f7] text-[#475569] border-transparent hover:bg-white hover:border-gray-200'
+                  }`}
+                >
+                  <div className="w-4 h-4 bg-[#f59e0b] rounded-full flex items-center justify-center text-[8px] text-white shadow-inner">
+                    <span className="scale-75">🪙</span>
+                  </div>
+                  {range.label}
+                </button>
+              ))}
             </div>
 
-            {/* Non-Veg Toggle */}
-            <div className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm">
-              <span className="text-sm font-bold text-gray-600">Non-Veg</span>
-              <button
-                onClick={() => setIsVeg(false)}
-                className={`w-12 h-6 rounded-full relative transition-colors ${!isVeg ? 'bg-[#B70C10]' : 'bg-gray-300'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${!isVeg ? 'left-7' : 'left-1'}`}></div>
-              </button>
-            </div>
-
-            {/* Price Filters */}
-            <div className="flex items-center gap-3 md:gap-4">
-              <button
-                onClick={() => setPriceRange('under-300')}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${priceRange === 'under-300' ? 'bg-[#B70C10] text-white border-[#B70C10]' : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100'}`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div> Under ₹300
-                </span>
-              </button>
-              <button
-                onClick={() => setPriceRange('300-450')}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${priceRange === '300-450' ? 'bg-[#B70C10] text-white border-[#B70C10]' : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100'}`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div> ₹300 - ₹450
-                </span>
-              </button>
-              <button
-                onClick={() => setPriceRange('450+')}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${priceRange === '450+' ? 'bg-[#B70C10] text-white border-[#B70C10]' : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100'}`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div> ₹450+
-                </span>
-              </button>
+            {/* Sort by Price Dropdown */}
+            <div className="mt-4 flex justify-start">
+               <button className="flex items-center gap-2 px-4 py-2 bg-[#f2f4f7] rounded-lg text-xs font-bold text-[#475569] hover:bg-white border border-transparent hover:border-[#e2e8f0] transition-all">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14" />
+                    <line x1="4" y1="10" x2="4" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12" y2="3" />
+                    <line x1="20" y1="21" x2="20" y2="16" />
+                    <line x1="20" y1="12" x2="20" y2="3" />
+                    <line x1="1" y1="14" x2="7" y2="14" />
+                    <line x1="9" y1="8" x2="15" y2="8" />
+                    <line x1="17" y1="16" x2="23" y2="16" />
+                  </svg>
+                  Sort by Price
+                  <svg className="w-3.5 h-3.5 ml-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+               </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* Best Sellers Section */}
-      <section className="py-8 px-4 bg-gray-50/50">
+      <section id="packages-section" className="py-8 px-4 bg-gray-50/50">
         <div className="max-w-full mx-auto">
           <h2 className="text-3xl md:text-4xl font-black mb-6 text-center font-heading">
-            Premium <span className="text-[#B70C10]">with Server</span>
+            {activeCategory} <span className="text-[#B70C10]">Packages</span>
           </h2>
 
           <div className="relative">
@@ -518,11 +544,11 @@ const MSCATERERSBoxPage = () => {
       </section>
 
       {/* Individual Products Section */}
-      <section className="py-12 px-4 bg-white">
+      <section id="individual-items-section" className="py-12 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4 text-center md:text-left">
             <h2 className="text-3xl md:text-4xl font-black font-heading">
-              Individual <span className="text-[#B70C10]">Items</span>
+               {activeCategory} <span className="text-[#B70C10]">Items</span>
             </h2>
             
             {/* Simple Filter Info */}
@@ -551,7 +577,7 @@ const MSCATERERSBoxPage = () => {
                 >
                   <div className="h-48 overflow-hidden relative">
                     <img 
-                      src={product.image || food_1} 
+                      src={resolveImg(product.image || product.image_url)} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                       alt={product.name} 
                     />
@@ -751,13 +777,13 @@ const MSCATERERSBoxPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
-                name: 'NinjaBuffet',
-                img: 'https://caterninja.com/NEWUI/product-description/ninjabuffet.webp',
-                icon: '🏢',
+                name: 'Delivery Only',
+                img: 'https://caterninja.com/NEWUI/product-description/ninjabox.webp',
+                icon: '🚚',
                 color: '#FFF5E6'
               },
               {
-                name: 'NinjaLive',
+                name: 'LiveService',
                 img: 'https://caterninja.com/NEWUI/product-description/ninjalive.webp',
                 icon: '🥂',
                 color: '#F0F9FF'
@@ -771,12 +797,19 @@ const MSCATERERSBoxPage = () => {
               {
                 name: 'MealBox',
                 img: 'https://caterninja.com/NEWUI/product-description/mealbox.webp',
-                icon: '🚚',
+                icon: '🍱',
                 color: '#F0FFF4'
               }
             ].map((service, i) => (
-              <div key={i} className="group cursor-pointer">
-                <div className="relative rounded-[25px] overflow-hidden shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
+              <div 
+                key={i} 
+                className={`group cursor-pointer transition-all duration-300 ${activeCategory === service.name ? 'scale-105' : ''}`}
+                onClick={() => {
+                  setActiveCategory(service.name);
+                  document.getElementById('individual-items-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <div className={`relative rounded-[25px] overflow-hidden shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border-4 ${activeCategory === service.name ? 'border-[#B70C10]' : 'border-transparent'}`}>
                   {/* Top Image Area */}
                   <div className="h-[200px] relative overflow-hidden">
                     <img
@@ -791,8 +824,8 @@ const MSCATERERSBoxPage = () => {
                   </div>
 
                   {/* Bottom Text Bar */}
-                  <div className="bg-white py-5 px-4 border-t border-gray-50">
-                    <h3 className="font-black text-xl text-gray-800 tracking-tight">{service.name}</h3>
+                  <div className={`bg-white py-5 px-4 border-t border-gray-50 transition-colors ${activeCategory === service.name ? 'bg-[#B70C10] text-white' : 'text-gray-800'}`}>
+                    <h3 className="font-black text-xl tracking-tight">{service.name}</h3>
                   </div>
                 </div>
               </div>

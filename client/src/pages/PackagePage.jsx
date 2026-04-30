@@ -12,6 +12,7 @@ const PackagePage = () => {
   const { search } = useLocation();
   const queryParams = new URLSearchParams(search);
   const occasion = queryParams.get('ocassion');
+  const [activeService, setActiveService] = React.useState('Delivery Only');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -21,11 +22,11 @@ const PackagePage = () => {
     <div className="pt-2">
       <ServicesScroll />
       {/* Circular icons */}
-      <ServiceTypes />
+      <ServiceTypes activeService={activeService} setActiveService={setActiveService} />
       
       {/* Packages Grid */}
       <div className="mt-4">
-        <PackagesSection />
+        <PackagesSection activeService={activeService} />
       </div>
 
       {/* Videos Section */}

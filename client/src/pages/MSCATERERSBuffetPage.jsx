@@ -11,6 +11,7 @@ import {
   Clock,
   ArrowRight,
   Loader2,
+  Plus,
   X
 } from 'lucide-react';
 import WhatsAppCTA from '../components/common/WhatsAppCTA';
@@ -40,6 +41,13 @@ const MSCATERERSBuffetPage = () => {
   const [selectedMenuForBooking, setSelectedMenuForBooking] = useState(null);
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
+
+  const resolveImg = (img) => {
+    if (!img) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200';
+    if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('blob:') || img.startsWith('/src/assets/') || typeof img === 'object') return img;
+    const baseUrl = 'https://mscaterers-server.onrender.com';
+    return `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`;
+  };
 
   useEffect(() => {
     fetchMenus();
@@ -531,7 +539,7 @@ const MSCATERERSBuffetPage = () => {
                 >
                   <div className="h-48 overflow-hidden relative">
                     <img 
-                      src={product.image || food_1} 
+                      src={resolveImg(product.image || product.image_url)} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                       alt={product.name} 
                     />
@@ -728,7 +736,7 @@ const MSCATERERSBuffetPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
-                name: 'NinjaBuffet',
+                name: 'MS Caterers Buffet',
                 img: 'https://caterninja.com/NEWUI/product-description/ninjabuffet.webp',
                 icon: '🏢',
                 color: '#FFF5E6'

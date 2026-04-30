@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import API from '../../api/axios';
 import MenuPopup from '../common/MenuPopup';
 
-const PackagesSection = () => {
+const PackagesSection = ({ activeService }) => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dietFilter, setDietFilter] = useState('veg'); // 'veg' or 'non-veg'
@@ -12,18 +12,20 @@ const PackagesSection = () => {
   const [selectedMenu, setSelectedMenu] = useState(null);
 
   useEffect(() => {
-    fetchInitialData();
-  }, []);
+    fetchPackages();
+  }, [activeService]);
 
-  const fetchInitialData = async () => {
+  const fetchPackages = async () => {
+    if (!activeService) return;
     try {
-      // Fetch all menus directly
-      const res = await API.get('/menus/all');
+      setLoading(true);
+      const res = await API.get(`/menus/category-name/${activeService}`);
       if (res.data.success) {
         setPackages(res.data.menus);
       }
     } catch (err) {
-      console.error('Error fetching all menus:', err);
+      console.error('Error fetching packages:', err);
+      setPackages([]);
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ const PackagesSection = () => {
           <div className="flex items-center gap-3">
              <div className="w-2 h-10 bg-[#B70C10] rounded-full"></div>
              <h1 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 tracking-tight">
-               Catering Packages
+                {activeService} Packages
              </h1>
           </div>
           <span className="bg-slate-100 text-slate-500 px-5 py-2 rounded-full font-bold text-xs uppercase tracking-widest">

@@ -45,11 +45,11 @@ const Bookings = () => {
     }
   };
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, message = '') => {
     try {
-      await api.patch(`/bookings/${id}/status`, { status });
+      await api.patch(`/bookings/${id}/status`, { status, message });
       fetchBookings();
-      if (selectedBooking?.id === id) {
+      if (selectedBooking?._id === id || selectedBooking?.id === id) {
         setSelectedBooking({ ...selectedBooking, status });
       }
     } catch (err) {
@@ -59,9 +59,10 @@ const Bookings = () => {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'Confirmed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'Confirmed': return 'bg-blue-50 text-blue-600 border-blue-100';
+      case 'In Progress': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
       case 'Pending': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'Completed': return 'bg-slate-100 text-slate-600 border-slate-200';
+      case 'Completed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'Cancelled': return 'bg-rose-50 text-rose-600 border-rose-100';
       default: return 'bg-slate-50 text-slate-500 border-slate-100';
     }
@@ -199,30 +200,49 @@ const Bookings = () => {
                    </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
+                <div className="pt-8 border-t border-slate-100">
+                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4">Status Logistics Management</p>
+                   <div className="flex flex-col gap-4">
+                      <input 
+                         id="statusMessage"
+                         type="text" 
+                         placeholder="Optional tracking update message (e.g., 'Chef has started preparation')" 
+                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-blue-500 transition-all"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                         {[
+                           { label: 'Confirm', status: 'Confirmed', color: 'bg-blue-600 hover:bg-blue-700' },
+                           { label: 'Start Prep', status: 'In Progress', color: 'bg-indigo-600 hover:bg-indigo-700' },
+                           { label: 'Mark Complete', status: 'Completed', color: 'bg-emerald-600 hover:bg-emerald-700' },
+                           { label: 'Cancel', status: 'Cancelled', color: 'bg-rose-600 hover:bg-rose-700' }
+                         ].map((btn) => (
+                           <button
+                             key={btn.status}
+                             onClick={() => {
+                               const msg = document.getElementById('statusMessage').value;
+                               updateStatus(selectedBooking._id || selectedBooking.id, btn.status, msg);
+                               document.getElementById('statusMessage').value = '';
+                             }}
+                             className={`px-4 py-2.5 ${btn.color} text-white rounded-lg font-bold text-[10px] uppercase tracking-widest shadow-sm transition-all`}
+                           >
+                             {btn.label}
+                           </button>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="pt-6 border-t border-slate-100 flex justify-between items-center bg-slate-50/50 -mx-8 -mb-8 p-8 mt-4">
                    <div>
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Total Valuation</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Valuation</p>
                       <p className="text-2xl font-black text-slate-900 mt-1">
                          ₹{(selectedBooking?.pricingBreakdown?.total || selectedBooking?.total_price || 0).toLocaleString()}
                       </p>
                    </div>
                    <div className="flex gap-3">
-                      {selectedBooking.status === 'Pending' && (
-                         <>
-                            <button 
-                               onClick={() => updateStatus(selectedBooking._id || selectedBooking.id, 'Cancelled')}
-                               className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all"
-                            >
-                               Reject
-                            </button>
-                            <button 
-                               onClick={() => updateStatus(selectedBooking._id || selectedBooking.id, 'Confirmed')}
-                               className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/10 hover:bg-blue-700 transition-all"
-                            >
-                               Confirm Order
-                            </button>
-                         </>
-                      )}
+                      <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-all">
+                        <Printer size={14} /> Print Order
+                      </button>
                    </div>
                 </div>
              </div>

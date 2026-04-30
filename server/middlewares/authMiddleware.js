@@ -35,6 +35,28 @@ exports.protect = async (req, res, next) => {
   }
 };
 
+exports.identifyUser = async (req, res, next) => {
+  try {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
+    }
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id);
+      if (user) {
+        req.user = user;
+      }
+    }
+    next();
+  } catch (err) {
+    next();
+  }
+};
+
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.map(r => r.toLowerCase()).includes(req.user.role.toLowerCase())) {

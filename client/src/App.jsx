@@ -15,6 +15,7 @@ import MSCATERERSBuffetPage from './pages/MSCATERERSBuffetPage';
 import SnackBoxPage from './pages/SnackBoxPage';
 import MealBoxPage from './pages/MealBoxPage';
 import ProfilePage from './pages/ProfilePage';
+import OrderTrackingPage from './pages/OrderTrackingPage';
 import { AuthProvider } from './context/AuthContext';
 
 // Admin Components
@@ -64,6 +65,7 @@ function App() {
   }, []);
 
   const isCheckPrice = window.location.pathname.includes('/checkprice');
+  const isProfilePath = window.location.pathname.includes('/profile');
   const isAdminPath = window.location.pathname.startsWith('/admin');
 
   if (checkingAuth && isAdminPath) {
@@ -95,8 +97,8 @@ function App() {
               />
             )}
             {!isAdminPath && <Header selectedCity={selectedCity} setSelectedCity={setSelectedCity} />}
-            {!isAdminPath && !isCheckPrice && <AlertBar />}
-            {!isAdminPath && !isCheckPrice && (
+            {!isAdminPath && !isCheckPrice && !isProfilePath && <AlertBar />}
+            {!isAdminPath && !isCheckPrice && !isProfilePath && (
               <LocationBar 
                 selectedCity={selectedCity} 
                 onEdit={() => setShowCityPopup(true)} 
@@ -114,6 +116,7 @@ function App() {
               <Route path="/snackbox" element={<SnackBoxPage />} />
               <Route path="/mealbox" element={<MealBoxPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/track-order" element={<OrderTrackingPage />} />
               
               {/* --- ADMIN ROUTES --- */}
               <Route 

@@ -38,11 +38,7 @@ const Menus = () => {
     base_price_per_plate: '', 
     min_guests: 10, 
     category: '',
-    image: '',
-    starters_count: 0,
-    mains_count: 0,
-    bread_rice_count: 0,
-    dessert_count: 0
+    image: ''
   });
   
   const [dishForm, setDishForm] = useState({ 
@@ -142,7 +138,7 @@ const Menus = () => {
       
       if (editingDish) {
         payload.dishId = editingDish._id;
-        await api.patch(`/admin/dishes/${editingDish._id}`, payload);
+        await api.patch('/admin/dishes', payload);
       } else {
         await api.post('/admin/dishes', payload);
       }
@@ -192,11 +188,7 @@ const Menus = () => {
               base_price_per_plate: '', 
               min_guests: 10, 
               category: selectedCategory, 
-              image: '',
-              starters_count: 0,
-              mains_count: 0,
-              bread_rice_count: 0,
-              dessert_count: 0
+              image: ''
             }); 
             setShowMenuModal(true); 
           }}
@@ -273,15 +265,6 @@ const Menus = () => {
                         <p className="text-sm font-bold text-slate-900 mt-1">₹{menu.base_price_per_plate}</p>
                      </div>
                      <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Composition</p>
-                        <div className="flex gap-1.5 mt-1 justify-end">
-                           <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold">{menu.starters_count}S</span>
-                           <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-bold">{menu.mains_count}M</span>
-                           <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[9px] font-bold">{menu.bread_rice_count}B/R</span>
-                           <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 rounded text-[9px] font-bold">{menu.dessert_count}D</span>
-                        </div>
-                     </div>
-                     <div className="text-right">
                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Min Qty</p>
                         <p className="text-sm font-bold text-slate-900 mt-1">{menu.min_guests || 0} Pax</p>
                      </div>
@@ -323,7 +306,7 @@ const Menus = () => {
                   <button 
                     onClick={() => {
                       setEditingDish(null);
-                      setDishForm({ name: '', type: 'Veg', price: 0, image_url: '' });
+                      setDishForm({ name: '', type: 'Veg', course: 'Starter', price: 0, image_url: '' });
                       setShowDishModal(true);
                     }}
                     className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2"
@@ -426,44 +409,21 @@ const Menus = () => {
             <form onSubmit={handleMenuSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Package Name</label>
-                <input required type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={menuForm.name} onChange={(e) => setMenuForm({...menuForm, name: e.target.value})} />
+                <input required type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={menuForm.name || ''} onChange={(e) => setMenuForm({...menuForm, name: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Base Price</label>
-                  <input required type="number" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={menuForm.base_price_per_plate} onChange={(e) => setMenuForm({...menuForm, base_price_per_plate: e.target.value})} />
+                  <input required type="number" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={menuForm.base_price_per_plate || ''} onChange={(e) => setMenuForm({...menuForm, base_price_per_plate: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Min Guests</label>
-                  <input required type="number" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={menuForm.min_guests} onChange={(e) => setMenuForm({...menuForm, min_guests: e.target.value})} />
+                  <input required type="number" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={menuForm.min_guests || ''} onChange={(e) => setMenuForm({...menuForm, min_guests: e.target.value})} />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Image URL</label>
-                <input type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={menuForm.image} onChange={(e) => setMenuForm({...menuForm, image: e.target.value})} />
-              </div>
-
-              {/* Item Counts Section */}
-              <div className="pt-4 border-t border-slate-100">
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Item Counts</h4>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Starters</label>
-                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.starters_count} onChange={(e) => setMenuForm({...menuForm, starters_count: e.target.value})} />
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Mains</label>
-                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.mains_count} onChange={(e) => setMenuForm({...menuForm, mains_count: e.target.value})} />
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Bread / Rice</label>
-                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.bread_rice_count} onChange={(e) => setMenuForm({...menuForm, bread_rice_count: e.target.value})} />
-                   </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Dessert</label>
-                      <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-bold outline-none" value={menuForm.dessert_count} onChange={(e) => setMenuForm({...menuForm, dessert_count: e.target.value})} />
-                   </div>
-                </div>
+                <input type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={menuForm.image || ''} onChange={(e) => setMenuForm({...menuForm, image: e.target.value})} />
               </div>
               <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all mt-4">
                 {editingMenu ? 'Save Changes' : 'Create Package'}
@@ -482,7 +442,7 @@ const Menus = () => {
             <form onSubmit={handleDishSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Dish Name</label>
-                <input required type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={dishForm.name} onChange={(e) => setDishForm({...dishForm, name: e.target.value})} />
+                <input required type="text" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-medium outline-none transition-all" value={dishForm.name || ''} onChange={(e) => setDishForm({...dishForm, name: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -495,7 +455,7 @@ const Menus = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Extra Price</label>
-                  <input required type="number" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={dishForm.price} onChange={(e) => setDishForm({...dishForm, price: Number(e.target.value)})} />
+                  <input required type="number" className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl p-3.5 text-sm font-bold outline-none transition-all" value={dishForm.price || 0} onChange={(e) => setDishForm({...dishForm, price: Number(e.target.value)})} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-6">
