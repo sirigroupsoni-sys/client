@@ -543,77 +543,7 @@ const MSCATERERSBoxPage = () => {
         </div>
       </section>
 
-      {/* Individual Products Section */}
-      <section id="individual-items-section" className="py-12 px-4 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4 text-center md:text-left">
-            <h2 className="text-3xl md:text-4xl font-black font-heading">
-               {activeCategory} <span className="text-[#B70C10]">Items</span>
-            </h2>
-            
-            {/* Simple Filter Info */}
-            <div className="flex items-center gap-4 text-sm font-bold text-gray-500">
-              <span className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${isVeg ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                Showing {isVeg ? 'Veg' : 'Non-Veg'}
-              </span>
-              <span className="px-3 py-1 bg-gray-100 rounded-full">
-                {priceRange === 'all' ? 'All Prices' : `₹${priceRange}`}
-              </span>
-            </div>
-          </div>
 
-          {productsLoading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-gray-400">
-              <Loader2 className="animate-spin mb-4" size={40} />
-              <p className="font-bold">Loading individual items...</p>
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product._id || product.id}
-                  className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden group hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="h-48 overflow-hidden relative">
-                    <img 
-                      src={resolveImg(product.image || product.image_url)} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                      alt={product.name} 
-                    />
-                    <div className="absolute top-4 right-4 bg-white p-1.5 rounded-lg shadow-md">
-                      <div className={`w-3 h-3 border-2 ${product.isVeg ? 'border-green-600' : 'border-red-600'} flex items-center justify-center p-0.5`}>
-                        <div className={`w-full h-full rounded-full ${product.isVeg ? 'bg-green-600' : 'bg-red-600'}`}></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-black text-lg text-gray-900 tracking-tight">{product.name}</h3>
-                      <span className="text-[#B70C10] font-black text-xl">₹{product.price}</span>
-                    </div>
-                    <p className="text-gray-500 text-xs line-clamp-2 mb-6 h-8">
-                      {product.description || 'Deliciously prepared with authentic ingredients and flavors.'}
-                    </p>
-                    <button 
-                      onClick={() => addToBox(product)}
-                      className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-[#B70C10] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Plus size={16} /> Add to Box
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-20 text-center bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200">
-              <p className="text-gray-400 font-bold text-lg">No individual items found for this selection.</p>
-              <p className="text-gray-400 text-sm mt-1">Try changing your filters or check back later.</p>
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* How It Works Section */}
       <section className="py-8 px-4 bg-[#FFF5F5]">
