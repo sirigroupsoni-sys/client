@@ -10,8 +10,8 @@ import WhatsAppCTA from '../components/common/WhatsAppCTA';
 const SelectedPackagePage = () => {
   const { search } = useLocation();
   const queryParams = new URLSearchParams(search);
-  const serviceParam = queryParams.get('service') || 'Delivery Only';
-  const [activeService, setActiveService] = React.useState(serviceParam === 'Express' ? 'Delivery Only' : serviceParam);
+  const serviceParam = queryParams.get('service') || 'MSCATERERSBox';
+  const [activeService, setActiveService] = React.useState(serviceParam === 'Express' ? 'MSCATERERSBox' : serviceParam);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -20,7 +20,7 @@ const SelectedPackagePage = () => {
   return (
     <div className="pt-6 pb-12">
       {/* Service Header - Matches Screenshot */}
-      {activeService === 'Delivery Only' ? (
+      {activeService === 'MSCATERERSBox' ? (
         <div className="flex flex-col items-center mb-10">
           <div className="p-[3px] border-[1.5px] border-[#ba1419] rounded-full mb-2">
             <div className="w-[120px] h-[120px] md:w-[150px] md:h-[150px] rounded-full overflow-hidden shadow-md bg-gradient-to-r from-gray-50 to-[#f5b8b8] flex items-center justify-center">

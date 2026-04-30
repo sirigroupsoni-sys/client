@@ -11,8 +11,8 @@ const productSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Delivery Only', 'Delivery + Services', 'Live Service', 'Snack Box', 'Meal Box'],
-    default: 'Delivery Only'
+    enum: ['BulkFood', 'FoodService', 'LiveServices', 'SnackBox', 'MealBox', 'Delivery Only', 'Delivery + Services', 'Live Service', 'Snack Box', 'Meal Box'],
+    default: 'BulkFood'
   },
   dishType: {
     type: String,

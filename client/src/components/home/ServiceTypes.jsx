@@ -2,11 +2,11 @@ import React, { useRef, useEffect } from 'react';
 
 const ServiceTypes = ({ activeService, setActiveService }) => {
   const serviceTypes = [
-    { id: 'Delivery Only', name: 'Delivery Only', image: 'https://caterninja.com/_next/image?url=https%3A%2F%2Fd3t167u6bqq6i3.cloudfront.net%2Ffrontend%2FNEWUI%2Fcategory%2Fdelivery-only.webp&w=1920&q=75' },
-    { id: 'Delivery + Services', name: 'Delivery + Services', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/2.png' },
-    { id: 'Live Service', name: 'Live Service', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/3.png' },
-    { id: 'Snack Box', name: 'Snack Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/4.png' },
-    { id: 'Meal Box', name: 'Meal Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/5.png' }
+    { id: 'MSCATERERSBox', name: 'Delivery Only', image: 'https://caterninja.com/_next/image?url=https%3A%2F%2Fd3t167u6bqq6i3.cloudfront.net%2Ffrontend%2FNEWUI%2Fcategory%2Fdelivery-only.webp&w=1920&q=75' },
+    { id: 'FoodService', name: 'Delivery + Services', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/2.png' },
+    { id: 'MSCATERERSBuffet', name: 'Live Service', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/3.png' },
+    { id: 'SnackBox', name: 'Snack Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/4.png' },
+    { id: 'MealBox', name: 'Meal Box', image: 'https://siridemo.co.in/ms/final-1/assets/images/tabs/5.png' }
   ];
   const scrollRef = useRef(null);
 

@@ -42,7 +42,7 @@ const MSCATERERSBoxPage = () => {
   const [isBookingOpen, setIsBookingOpen] = React.useState(false);
   const [selectedMenuForBooking, setSelectedMenuForBooking] = React.useState(null);
   const [products, setProducts] = React.useState([]);
-  const [activeCategory, setActiveCategory] = React.useState('Delivery Only');
+  const [activeCategory, setActiveCategory] = React.useState('BulkFood');
 
   const resolveImg = (img) => {
     if (!img) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200';
@@ -128,8 +128,8 @@ const MSCATERERSBoxPage = () => {
   const bannerImages = [banner1, banner2, banner3, banner4, banner5];
 
   const categories = [
-    { id: 'Delivery Only', title: 'Delivery Only', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/1.png' },
-    { id: 'LiveService', title: 'Live Service', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/2.png' },
+    { id: 'BulkFood', title: 'Delivery Only', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/1.png' },
+    { id: 'LiveServices', title: 'Live Service', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/2.png' },
     { id: 'SnackBox', title: 'Snack Box', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/3.png' },
     { id: 'MealBox', title: 'Meal Box', img: 'https://siridemo.co.in/ms/final-1/assets/images/cusi/4.png' }
   ];
@@ -707,13 +707,13 @@ const MSCATERERSBoxPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
-                name: 'Delivery Only',
+                name: 'BulkFood',
                 img: 'https://caterninja.com/NEWUI/product-description/ninjabox.webp',
                 icon: '🚚',
                 color: '#FFF5E6'
               },
               {
-                name: 'LiveService',
+                name: 'LiveServices',
                 img: 'https://caterninja.com/NEWUI/product-description/ninjalive.webp',
                 icon: '🥂',
                 color: '#F0F9FF'

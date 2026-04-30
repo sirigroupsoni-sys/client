@@ -20,11 +20,11 @@ const ServicesScroll = () => {
     const routeMap = {
       '4 Hr Delivery': '/selectedPackage?service=Express',
       '8 Hr Delivery': '/mscaterersbox',
-      'Buffet Services': '/selectedPackage?service=MSCATERERSBox',
-      'Live Experiences': '/selectedPackage?service=LiveServices',
+      'Buffet Services': '/selectedPackage?service=MSCATERERSBuffet',
+      'Live Experiences': '/selectedPackage?service=MSCATERERSBuffet',
       'Bulk Food': '/selectedPackage?service=MSCATERERSBox',
-      'Customize': '/selectedPackage?service=MSCATERERSBox',
-      'Live Bread': '/selectedPackage?service=LiveServices',
+      'Customize': '/selectedPackage?service=FoodService',
+      'Live Bread': '/selectedPackage?service=MSCATERERSBuffet',
       'Snack Box': '/selectedPackage?service=SnackBox',
       'MealBox': '/selectedPackage?service=MealBox'
     };

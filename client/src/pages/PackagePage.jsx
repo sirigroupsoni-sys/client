@@ -12,7 +12,7 @@ const PackagePage = () => {
   const { search } = useLocation();
   const queryParams = new URLSearchParams(search);
   const occasion = queryParams.get('ocassion');
-  const [activeService, setActiveService] = React.useState('Delivery Only');
+  const [activeService, setActiveService] = React.useState('MSCATERERSBox');
 
   useEffect(() => {
     window.scrollTo(0, 0);

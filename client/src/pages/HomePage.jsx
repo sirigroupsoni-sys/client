@@ -12,7 +12,7 @@ import SafetyBanner from '../components/common/SafetyBanner';
 import WhatsAppCTA from '../components/common/WhatsAppCTA';
 
 const HomePage = () => {
-  const [activeService, setActiveService] = React.useState('Delivery Only');
+  const [activeService, setActiveService] = React.useState('MSCATERERSBox');
 
   return (
     <>
